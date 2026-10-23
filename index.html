@@ -67,7 +67,7 @@ header{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:va
 .ch .star{position:absolute;top:8px;right:9px;font-size:12px;color:var(--amb)}
 .bd{font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;letter-spacing:.2px;white-space:nowrap;font-style:normal}
 .s-free{background:#3ccf6e1f;color:var(--grn)}.s-login{background:#e8b33a1f;color:var(--amb)}.s-paid{background:#ff5a5a1f;color:#ff7a7a}
-.t-hls{background:#5aa2ff1f;color:var(--blu)}.t-yt{background:#ff46461f;color:var(--yt)}.t-link{background:#ffffff10;color:var(--tx2)}
+.t-hls{background:#5aa2ff1f;color:var(--blu)}.t-yt{background:#ff46461f;color:var(--yt)}
 .v-ok{background:#3ccf6e1f;color:var(--grn)}.v-fail{background:#ff5a5a1f;color:#ff7a7a}.v-none{background:#ffffff0c;color:var(--tx3)}.v-block{background:#ffffff0c;color:#c98a8a}
 .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--tx3);margin-bottom:16px}
 .legend span{display:flex;align-items:center;gap:5px}
@@ -84,10 +84,6 @@ header{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:va
 .istat b{color:var(--tx)}
 .more{display:block;margin:12px auto 0;min-width:200px}
 .empty{color:var(--tx3);text-align:center;padding:40px 0}
-.ch.sp{padding:0 0 10px;gap:5px;overflow:hidden}
-.ch.sp img{width:100%;aspect-ratio:16/9;object-fit:cover;background:#000;display:block}
-.ch.sp .ch-n,.ch.sp .ch-m{padding:0 10px}
-.sp-t{padding:0 10px;font-size:11.5px;color:var(--tx2);line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:#26262e;border:1px solid var(--bdr);color:var(--tx);padding:10px 16px;border-radius:10px;font-size:13px;z-index:40;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw}
 .toast.show{opacity:1}
 footer{color:var(--tx3);font-size:11px;text-align:center;padding:14px 0 22px;border-top:1px solid var(--bdr)}
@@ -119,7 +115,6 @@ footer{color:var(--tx3);font-size:11px;text-align:center;padding:14px 0 22px;bor
         <div class="p-title"><h2 id="pName"></h2><small id="pSub"></small></div>
         <button class="pb" id="pMute">🔊 소리</button>
         <button class="pb fav" id="pFav">☆ 즐겨찾기</button>
-        <button class="pb" id="pPage" hidden>공식 페이지 ↗</button>
         <button class="pb" id="pFull">전체화면</button>
         <button class="pb" id="pClose">✕ 목록</button>
       </div>
@@ -127,38 +122,21 @@ footer{color:var(--tx3);font-size:11px;text-align:center;padding:14px 0 22px;bor
   </div>
   <main id="list"></main>
 </div>
-<footer>TVwa · 방송사 공식 플레이어·공개 스트림·iptv-org 공개 목록·YouTube 공식 채널만 연결 · DRM·인증·지역 제한 우회 없음 · 정차 중에만 시청하세요</footer>
+<footer>TVwa · 방송사 공개 스트림·iptv-org 공개 목록·YouTube 공식 채널만 연결 · 새 탭 이동 없이 이 화면에서만 재생 · DRM·인증·지역 제한 우회 없음 · 정차 중에만 시청하세요</footer>
 <div class="toast" id="toast"></div>
 
 <script>
 'use strict';
 /* ===================== 1. 기존 TVwa 채널 목록 =====================
-   t: hls=직접재생 · yt=YouTube 라이브(영상 ID) · web/link=방송사 공식 페이지(새 탭)
+   t: hls=직접재생 · yt=YouTube 라이브(영상 ID)  — 새 탭으로 여는 항목은 두지 않음
    s: free=무료 · login=로그인 · paid=구독                                   */
-const KBS=c=>'https://onair.kbs.co.kr/index.html?sname=onair&stype=live&ch_code='+c;
 const EBS=p=>`https://ebsonair.ebs.co.kr/${p}familypc/familypc1m/playlist.m3u8`;
 const DATA=[
  {tab:'공중파',groups:[
-  {g:'KBS',items:[
-   ['kbs1','KBS 1TV','web',KBS('11'),'free'],['kbs2','KBS 2TV','web',KBS('12'),'free'],
-   ['kbsd','KBS Drama','web',KBS('N91'),'free'],['kbsj','KBS Joy','web',KBS('N92'),'free'],
-   ['kbss','KBS Story','web',KBS('N94'),'free'],['kbsl','KBS Life','web',KBS('N93'),'free'],
-   ['kbsk','KBS Kids','web',KBS('N96'),'free'],['kbsw','KBS World','web',KBS('14'),'free']]},
-  {g:'MBC · SBS',items:[
-   ['mbc','MBC','web','https://onair.imbc.com/','login'],['sbs','SBS','web','https://www.sbs.co.kr/live/S01','login'],
-   ['obs','OBS 경인TV','web','https://www.obs.co.kr/onair/','free']]},
   {g:'EBS',note:'직접 재생',items:[
    ['ebs1','EBS 1TV','hls',EBS('groundwave'),'free'],['ebs2','EBS 2TV','hls',EBS('ebs2'),'free'],
    ['ebsk','EBS Kids','hls',EBS('ebsu'),'free'],['ebsp1','EBS Plus 1','hls',EBS('plus1'),'free'],
    ['ebsp2','EBS Plus 2','hls',EBS('plus2'),'free'],['ebse','EBS English','hls',EBS('plus3'),'free']]}]},
- {tab:'종편·케이블',groups:[
-  {g:'종합편성',items:[
-   ['jtbc','JTBC','web','https://onair.jtbc.co.kr/','free'],['mbn','MBN','web','https://www.mbn.co.kr/vod/onair','free'],
-   ['tvch','TV조선','web','https://www.tvchosun.com/onair/index.html','free'],['cha','채널A','web','https://www.ichannela.com/','login']]},
-  {g:'케이블 (TVING · wavve)',note:'구독 필요',items:[
-   ['tvn','tvN','link','https://www.tving.com/live','paid'],['mnet','Mnet','link','https://www.tving.com/live','paid'],
-   ['ocn','OCN','link','https://www.tving.com/live','paid'],['jtbc2','JTBC2','link','https://www.tving.com/live','paid'],
-   ['mbcev','MBC every1','link','https://www.wavve.com/live','paid'],['sbsp','SBS Plus','link','https://www.wavve.com/live','paid']]}]},
  {tab:'뉴스',groups:[
   {g:'24시간 뉴스',items:[
    ['ytn','YTN','yt','UChlgI3UHCOnwUGzWzbJ3H5w','free','lpQTznAbLn0'],['ynh','연합뉴스TV','yt','UCTHCOPwqNfZ0uiKOvFyhGwg','free','ilvhUd2YgBI'],
@@ -167,47 +145,25 @@ const DATA=[
    ['mbcn','MBC 뉴스','yt','UCF4Wxdo3inmxP-Y59wXDsFw','free','m0wUTjsd7gw'],['sbsn','SBS 뉴스','yt','UCkinYTS9IHqOEwR1Sze2JTw','free','3n0ES_XiaPc'],
    ['jtbcn','JTBC 뉴스','yt','UCsU-I-vHLiaMfV_ceaYz5rQ','free','fqQAD_noR9E'],['tvcn','TV조선 뉴스','yt','UCWlV3Lz_55UaX4JsMj-z__Q','free','ao8KmYncnw8']]},
   {g:'공공',items:[
-   ['ktv','KTV 국민방송','web','https://www.ktv.go.kr/','free'],['natv','국회방송','web','https://www.natv.go.kr/','free'],
-   ['ari','Arirang TV','web','https://www.arirang.com/v/live','free']]}]},
+   ['ktv','KTV 국민방송','hls','https://hlive.ktv.go.kr/live/klive_h.stream/playlist.m3u8','free']]}]},
  {tab:'지역방송',groups:[
   {g:'SBS 계열 지역민방',note:'방송사 자체 서버',items:[
    ['knn','KNN 부산경남','hls','https://stream1.knn.co.kr/hls/9ly4534y7dm2xfa123r2_tv/index.m3u8','free'],
    ['kbc','KBC 광주','hls','https://vod.ikbc.co.kr/KBCTV/tv/playlist.m3u8','free'],
    ['ubc','UBC 울산','hls','https://stream.ubc.co.kr/hls/ubctvstream/index.m3u8','free'],
    ['tjb','TJB 대전','hls','https://vod.tjb.co.kr/live/_definst_/tv/playlist.m3u8','free'],
-   ['cjb','CJB 청주','hls','https://wowza1.cjb.co.kr/live/cjbtv/playlist.m3u8','free'],
-   ['jtv','JTV 전주','link','https://www.jtv.co.kr/page/00028.php','login'],
-   ['tbc','TBC 대구','link','https://www.tbc.co.kr/','free'],['g1','G1 강원','link','https://www.g1tv.co.kr/','free'],
-   ['jibs','JIBS 제주','link','https://www.jibstv.com/','free']]},
+   ['cjb','CJB 청주','hls','https://wowza1.cjb.co.kr/live/cjbtv/playlist.m3u8','free']]},
   {g:'지역 MBC',note:'방송사 자체 서버',items:[
-   ['dgmbc','대구MBC','link','https://dgmbc.com/OnAir','free'],
    ['tjmbc','대전MBC','hls','https://ns1.tjmbc.co.kr/live/myStream.sdp/playlist.m3u8','free'],
    ['kjmbc','광주MBC','hls','https://media.kjmbc.co.kr/hls/live/stream/playlist.m3u8','free'],
-   ['jmbc','전주MBC','link','https://www.jmbc.co.kr/onair/tv','free'],
    ['chmbc','춘천MBC','hls','https://stream.chmbc.co.kr/TV/myStream/playlist.m3u8','free'],
    ['mpmbc','목포MBC','hls','https://vod.mpmbc.co.kr/a_live/25246741/ch001/playlist.m3u8','free'],
-   ['mbcgn','MBC경남','link','https://mbcgn.kr/06_oar/oar01.asp?mn_lnk=A','login'],
-   ['mbceg','MBC강원영동','link','https://www.mbceg.co.kr/','free'],
-   ['bsmbc','부산MBC','link','https://www.busanmbc.co.kr/','free'],['jjmbc','제주MBC','link','https://www.jejumbc.com/','free']]}]},
- {tab:'IPTV',iptv:true,groups:[]},
- {tab:'SOOP',live:true,groups:[]},
- {tab:'무료 플랫폼',groups:[
-  {g:'FAST · 라이브 플랫폼',items:[
-   ['stvp','삼성 TV 플러스','link','https://www.samsungtvplus.com/','free'],
-   ['soop','SOOP LIVE','link','https://www.sooplive.co.kr/','free'],
-   ['chzzk','치지직','link','https://chzzk.naver.com/','free'],
-   ['ytlive','YouTube 라이브','link','https://www.youtube.com/live','free']]}]},
- {tab:'음악',groups:[
-  {g:'차트',items:[
-   ['melon','멜론 TOP100','link','https://www.melon.com/chart/index.htm','free'],
-   ['ytchart','YouTube 인기곡 (한국)','link','https://charts.youtube.com/charts/TopSongs/kr/weekly','free'],
-   ['ytmv','YouTube 인기 뮤비 (한국)','link','https://charts.youtube.com/charts/TopVideos/kr/weekly','free']]}]}
+   ['jjmbc','제주MBC','hls','https://wowza.jejumbc.com/live/tv_jejumbc/playlist.m3u8','free']]}]},
+ {tab:'IPTV',iptv:true,groups:[]}
 ];
 
 /* 기존 채널 ↔ iptv-org 채널 이름 매칭 키 (중복 정리·스트림 보강용) */
-const MATCH={obs:['hlqsdtv'],ktv:['ktv'],natv:['nationalassemblytv'],ari:['arirangtv','arirangtvhd'],tvch:['tvchosun'],cha:['channela'],
- ytn:['ytn'],dgmbc:['hlctdtv'],jmbc:['hlcxdtv'],mbcgn:['mbcgyeongnamtv'],bsmbc:['hlkudtv'],jjmbc:['hlajdtv'],g1:['hlcgdtv'],jibs:['hlkjdtv'],
- jtv:['hldqdtv'],knn:['hldgdtv'],kbc:['hldhdtv'],ubc:['hldpdtv'],cjb:['hldrdtv'],tjmbc:['hlcqdtv'],kjmbc:['hlcndtv'],chmbc:['hlandtv'],mpmbc:['hlamdtv'],
+const MATCH={ktv:['ktv'],ytn:['ytn'],jjmbc:['hlajdtv'],knn:['hldgdtv'],kbc:['hldhdtv'],ubc:['hldpdtv'],cjb:['hldrdtv'],tjmbc:['hlcqdtv'],kjmbc:['hlcndtv'],chmbc:['hlandtv'],mpmbc:['hlamdtv'],
  ebs1:['ebs1tv'],ebs2:['ebs2tv'],ebsk:['ebskids'],ebsp1:['ebsplus1'],ebsp2:['ebsplus2'],ebse:['ebsenglish']};
 
 /* ===================== 2. iptv-org 설정 ===================== */
@@ -354,9 +310,8 @@ function runStream(c,v,{onOk,onFail,timeout=15000,muted=false}){
 }
 
 /* ===================== 9. 채널 데이터 구성 ===================== */
-const BUILTIN=[];DATA.forEach(t=>t.groups.forEach(g=>g.items.forEach(a=>BUILTIN.push({id:a[0],n:a[1],t:a[2]==='web'?'link':a[2],u:a[3],s:a[4],v:a[5],tab:t.tab,g:g.g,src:'tvwa'}))));
+const BUILTIN=[];DATA.forEach(t=>t.groups.forEach(g=>g.items.forEach(a=>BUILTIN.push({id:a[0],n:a[1],t:a[2],u:a[3],s:a[4],v:a[5],tab:t.tab,g:g.g,src:'tvwa'}))));
 const BY={};BUILTIN.forEach(c=>BY[c.id]=c);
-const ORIG={};BUILTIN.forEach(c=>ORIG[c.id]={t:c.t,u:c.u});
 let EXT=ls.get('tvwa.ext',{});          // 즐겨찾기·최근 시청한 IPTV 채널 보관
 Object.values(EXT).forEach(c=>{if(!BY[c.id])BY[c.id]=c});
 const IP={scope:'kr',lists:{kr:null,all:null},meta:{kr:null,all:null},err:{kr:null,all:null},loading:{kr:false,all:false},country:'',cat:'',vf:'',shown:120};
@@ -366,8 +321,6 @@ function toChannel(it,scope){
   return{id:'ip-'+hashId(normUrl(it.url)),n:ko||it.name,o:ko?it.name:'',t:'hls',u:it.url,s:'free',logo:it.logo,cc:it.country,cats:it.groups,res:it.res,flags:it.flags,opts:it.opts,key:it.key,g:'iptv-org',tab:'IPTV',src:'iptv',scope};
 }
 function mergeIPTV(items,scope){
-  // 기존 링크 채널을 원상태로 되돌린 뒤(새로고침 대비) 다시 보강
-  if(scope==='kr')BUILTIN.forEach(c=>{if(c.src==='tvwa+iptv'){c.t=ORIG[c.id].t;c.u=ORIG[c.id].u;c.page=null;c.src='tvwa'}});
   const urlSet=new Map(BUILTIN.map(c=>[normUrl(c.u),c]));
   const keyMap={};Object.entries(MATCH).forEach(([id,keys])=>keys.forEach(k=>keyMap[k]=id));
   const seen=new Set(),out=[];let dup=0;
@@ -378,9 +331,6 @@ function mergeIPTV(items,scope){
     const ch=toChannel(it,scope);
     const bid=scope==='kr'||it.country==='kr'?keyMap[it.key]:null;
     if(bid&&BY[bid]){
-      const b=BY[bid],vr=vGet(ch.u);
-      // 실제 재생이 확인된 스트림만 기존 '공식 페이지' 채널의 재생 소스로 승격
-      if(b.t==='link'&&!policyBlock(ch)&&vr&&vr.ok){b.page=ORIG[b.id].u;b.t='hls';b.u=ch.u;b.src='tvwa+iptv';dup++;continue}
       dup++;continue;   // 이름이 같은 기존 채널이 있으면 기존 채널 하나만 표시
     }
     out.push(ch);BY[ch.id]=ch;
@@ -413,13 +363,12 @@ function applyList(scope,text,at,fromCache){
 
 /* ===================== 10. 화면 ===================== */
 let favs=new Set(ls.get('tvwa.f',[])),recent=ls.get('tvwa.r',[]),tab=ls.get('tvwa.t','공중파'),cur=null,stopStream=null,phTimer=null,checking=null;
-const TABS=['즐겨찾기','공중파','종편·케이블','뉴스','지역방송','IPTV','SOOP','무료 플랫폼','음악'];
+const TABS=['즐겨찾기','공중파','뉴스','지역방송','IPTV'];
 if(!TABS.includes(tab))tab='공중파';
 const SL={free:'무료',login:'로그인',paid:'구독'};
 
 function vBadge(c){
   if(c.t==='yt')return'<i class="bd t-yt">YouTube</i>';
-  if(c.t==='link')return'<i class="bd t-link">공식 페이지 ↗</i>';
   const b=policyBlock(c);if(b)return`<i class="bd v-block">제외 · ${esc(SHORT(b.k))}</i>`;
   const r=vGet(c.u);
   if(!r)return'<i class="bd v-none">미검증</i>';
@@ -449,11 +398,10 @@ function render(){
   }else if(tab==='즐겨찾기'){
     const f=[...favs].map(id=>BY[id]).filter(Boolean),rc=recent.map(id=>BY[id]).filter(Boolean);
     h=(f.length?'':'<div class="empty">채널을 길게 누르거나 플레이어의 ☆ 버튼으로 즐겨찾기에 추가하세요</div>')+groupHTML('즐겨찾기',f)+groupHTML('최근 시청',rc);
-  }else if(tab==='SOOP'){renderSoop();return}
-  else if(tab==='IPTV'){h=renderIPTV()}
+  }else if(tab==='IPTV'){h=renderIPTV()}
   else{
     const t=DATA.find(d=>d.tab===tab);
-    h=`<div class="legend"><span><i class="bd v-ok">✓ 재생 확인</i> 실제 재생 검증됨</span><span><i class="bd v-none">미검증</i> 아직 확인 전</span><span><i class="bd t-yt">YouTube</i> 공식 채널 라이브</span><span><i class="bd t-link">공식 페이지 ↗</i> 새 탭</span></div>`;
+    h=`<div class="legend"><span><i class="bd v-ok">✓ 재생 확인</i> 실제 재생 검증됨</span><span><i class="bd v-none">미검증</i> 아직 확인 전</span><span><i class="bd t-yt">YouTube</i> 공식 채널 라이브</span></div>`;
     if(tab==='공중파')h+=`<div class="custom"><input id="m3u" type="url" inputmode="url" placeholder="시청 권한이 있는 m3u8 · mp4 주소를 붙여넣고 재생" aria-label="스트림 주소"><button class="pb" id="m3uGo">재생</button></div>`;
     h+=t.groups.map(g=>groupHTML(g.g,g.items.map(a=>BY[a[0]]),g.note)).join('');
   }
@@ -512,11 +460,11 @@ $('#list').addEventListener('click',e=>{const b=e.target.closest('.ch');if(!b)re
 
 function keepExt(c){if(c&&c.src==='iptv'){EXT[c.id]={id:c.id,n:c.n,o:c.o,t:c.t,u:c.u,s:c.s,logo:c.logo,cc:c.cc,cats:c.cats,opts:c.opts,g:c.g,tab:c.tab,src:c.src,scope:c.scope};ls.set('tvwa.ext',EXT)}}
 function toggleFav(id){
-  const c=BY[id];if(!c||String(id).startsWith('soop-')){toast('이 항목은 즐겨찾기를 지원하지 않습니다');return}
+  const c=BY[id];if(!c){toast('이 항목은 즐겨찾기를 지원하지 않습니다');return}
   if(favs.has(id)){favs.delete(id);toast('즐겨찾기에서 뺐습니다')}else{favs.add(id);keepExt(c);toast('★ 즐겨찾기에 추가')}
   ls.set('tvwa.f',[...favs]);render();syncFavBtn();
 }
-function addRecent(c){if(!c||c.id==='custom'||String(c.id).startsWith('soop-'))return;keepExt(c);recent=[c.id,...recent.filter(x=>x!==c.id)].slice(0,12);ls.set('tvwa.r',recent)}
+function addRecent(c){if(!c||c.id==='custom')return;keepExt(c);recent=[c.id,...recent.filter(x=>x!==c.id)].slice(0,12);ls.set('tvwa.r',recent)}
 function syncFavBtn(){const on=cur&&favs.has(cur.id);$('#pFav').classList.toggle('on',!!on);$('#pFav').textContent=on?'★ 즐겨찾기':'☆ 즐겨찾기';$('#pFav').hidden=!cur||cur.id==='custom'}
 function syncMute(){const v=$('#vid');$('#pMute').textContent=v.muted?'🔇 음소거됨':'🔊 소리';$('#pMute').hidden=v.hidden}
 
@@ -525,22 +473,19 @@ function showPH(html){const ph=$('#ph');ph.hidden=false;ph.innerHTML=html}
 function showLoading(t){showPH(`<div class="spin"></div><p>${esc(t)}</p>`)}
 function showError(c,info){
   const [title,desc]=REASON[info.k]||['재생 실패','알 수 없는 오류'];
-  showPH(`<h4>${esc(title)}${info.code?' '+info.code:''}</h4><p>${esc(desc)}</p><div class="acts"><button class="go" id="phRetry">다시 시도</button>${c.page?'<button class="go sec" id="phPage">공식 페이지 ↗</button>':''}<button class="go sec" id="phBack">목록으로</button></div>`);
-  $('#phRetry').onclick=()=>play(c);$('#phBack').onclick=closePlayer;const pp=$('#phPage');if(pp)pp.onclick=()=>window.open(c.page,'_blank','noopener');
+  showPH(`<h4>${esc(title)}${info.code?' '+info.code:''}</h4><p>${esc(desc)}</p><div class="acts"><button class="go" id="phRetry">다시 시도</button><button class="go sec" id="phBack">목록으로</button></div>`);
+  $('#phRetry').onclick=()=>play(c);$('#phBack').onclick=closePlayer;
 }
 function stop(){
   clearTimeout(phTimer);if(stopStream){stopStream();stopStream=null}
   const v=$('#vid');v.__tok=null;v.onerror=null;try{v.pause();v.removeAttribute('src');v.load()}catch(e){}v.hidden=true;
   const f=$('#frm');f.src='about:blank';f.hidden=true;
 }
-function openPage(c){const u=c.t==='yt'?`https://www.youtube.com/channel/${c.u}/live`:(c.page||c.u);window.open(u,'_blank','noopener')}
 function play(c){
-  if(c.t==='link'){openPage(c);addRecent(c);toast(c.n+' 공식 페이지를 새 탭에서 엽니다');return}
   stop();cur=c;addRecent(c);
   $('#pcol').hidden=false;$('#layout').classList.add('has-player');
   $('#pName').textContent=c.n;
-  $('#pSub').textContent=[c.o,c.g,c.src==='tvwa+iptv'?'iptv-org 스트림':'',c.t==='yt'?'"볼 수 없음"이 뜨면 공식 페이지 ↗':''].filter(Boolean).join(' · ');
-  $('#pPage').hidden=!(c.page||c.t==='yt');
+  $('#pSub').textContent=[c.o,c.g,c.t==='yt'?'"볼 수 없음"이 뜨면 라이브가 새로 시작된 것 — 영상 ID 갱신 필요':''].filter(Boolean).join(' · ');
   syncFavBtn();
   const v=$('#vid'),f=$('#frm');
   if(c.t==='yt'){
@@ -561,7 +506,6 @@ function play(c){
   if(innerWidth<1000)$('#pcol').scrollIntoView({behavior:'smooth',block:'start'});
 }
 function closePlayer(){stop();cur=null;$('#pcol').hidden=true;$('#layout').classList.remove('has-player');render()}
-$('#pPage').onclick=()=>cur&&openPage(cur);
 $('#pFav').onclick=()=>cur&&toggleFav(cur.id);
 $('#pClose').onclick=closePlayer;
 $('#pMute').onclick=()=>{const v=$('#vid');v.muted=!v.muted;syncMute()};
@@ -580,34 +524,6 @@ function startCheck(list){
   Promise.all([worker(),worker(),worker()]).then(()=>{box.remove();const r=checking;checking=null;render();if(r)toast(`점검 완료: ${r.done}개 중 ${r.ok}개 재생 확인`)});
 }
 function stopCheck(){if(checking)checking.stop=true}
-
-/* ===================== 13. SOOP ===================== */
-let soop=null,soopAt=0;
-function loadSoop(force){
-  if(soop&&!force&&Date.now()-soopAt<120000)return Promise.resolve(soop);
-  return new Promise(res=>{
-    const cb='__soop'+Date.now();const s=document.createElement('script');
-    const done=d=>{delete window[cb];s.remove();if(d&&d.broad){soop=d.broad.filter(b=>b.broad_grade!=='19'&&b.is_password!=='Y'&&b.subscription_only!=='1').slice(0,60);soopAt=Date.now()}res(soop)};
-    window[cb]=done;s.onerror=()=>done(null);setTimeout(()=>window[cb]&&done(null),8000);
-    s.src=`https://live.sooplive.com/api/main_broad_list_api.php?callback=${cb}&selectType=action&selectValue=all&orderType=view_cnt&pageNo=1&lang=`;
-    document.head.appendChild(s);
-  });
-}
-function soopCard(b){
-  const c={id:'soop-'+b.user_id,n:b.user_nick,t:'link',u:`https://play.sooplive.com/${encodeURIComponent(b.user_id)}`,s:'free',g:'SOOP',tab:'SOOP'};BY[c.id]=c;
-  const v=(+b.current_view_cnt||0)+(+b.m_current_view_cnt||0);
-  return`<button class="ch sp" data-id="${esc(c.id)}"><img loading="lazy" alt="" src="https:${esc(b.broad_thumb)}"><span class="ch-n">${esc(b.user_nick)}</span><span class="sp-t">${esc(b.broad_title)}</span><span class="ch-m"><i class="bd t-yt">● ${v.toLocaleString()}명</i><i class="bd t-link">새 탭 ↗</i></span></button>`;
-}
-function renderSoop(){
-  $('#list').innerHTML='<div class="empty">SOOP 인기 방송 불러오는 중…</div>';
-  loadSoop().then(list=>{
-    if(tab!=='SOOP'||$('#q').value.trim())return;
-    $('#list').innerHTML=list&&list.length
-      ?`<section class="group"><div class="g-head"><h3>SOOP 인기 라이브</h3><span>시청자 순 · ${list.length}개</span><button class="pb" id="soopRe">새로고침</button></div><div class="grid">${list.map(soopCard).join('')}</div></section>`
-      :'<div class="empty">SOOP 목록을 불러오지 못했습니다 <button class="pb" id="soopRe">다시 시도</button></div>';
-    const r=$('#soopRe');if(r)r.onclick=()=>{loadSoop(true).then(renderSoop)};
-  });
-}
 
 /* ===================== 14. 시작 ===================== */
 function tick(){$('#clock').textContent=new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})}
