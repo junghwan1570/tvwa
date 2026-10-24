@@ -478,6 +478,8 @@ function buildIdx(){
   epgIdx = {};
   if (!EPG) return;
   for (const [k, v] of Object.entries(EPG.tv || {})) { const n = norm(k); if (!epgIdx[n]) epgIdx[n] = v; }
+  // 스카이라이프에 없는 채널은 같은 이름의 삼성TV 채널 편성으로 보충 (KBS 뉴스24, JTBC 뉴스 등)
+  for (const c of ALL) if (c.type === 'stvp' && EPG.stvp && EPG.stvp[c.url]) { const n = norm(c.name); if (!epgIdx[n]) epgIdx[n] = EPG.stvp[c.url]; }
 }
 function progsOf(c){
   if (!EPG) return null;
@@ -523,7 +525,7 @@ const CAT = {
 };
 const CAT_OF = {};
 for (const [k, list] of Object.entries(CAT)) list.forEach(n => CAT_OF[n] = k);
-Object.assign(ALIAS, { kbs월드: 'kbsworld', ebs1tv: 'ebs1', ebs2tv: 'ebs2', ebs: 'ebs1', ebs키즈: 'ebskids', mbc드라마넷: 'mbc드라마', 'tvchosun2': 'tv조선2', 'tv조선2': 'tv조선2', kbs1tv: 'kbs1', kbs2tv: 'kbs2', 투니버스: '투니버스', 방송대학: '방송대학' });
+Object.assign(ALIAS, { oun: '방송대학', mbcnet: 'mbcnet', kbsnsports: 'kbsnsports', kbs월드: 'kbsworld', ebs1tv: 'ebs1', ebs2tv: 'ebs2', ebs: 'ebs1', ebs키즈: 'ebskids', mbc드라마넷: 'mbc드라마', 'tvchosun2': 'tv조선2', 'tv조선2': 'tv조선2', kbs1tv: 'kbs1', kbs2tv: 'kbs2', 투니버스: '투니버스', 방송대학: '방송대학' });
 function catOf(c){
   if (c.type === 'stvp') return '삼성TV';
   if (REGION[c.id] || norm(c.name) === 'mbcnet') return '지역방송';
@@ -536,6 +538,8 @@ function srcRank(x){
   if (/760515\.xyz|epg\.pw/.test(x.url)) return 2;
   return 1;
 }
+// 채널 로고 (iptv-org 데이터베이스 기준)
+const LOGOS = {"kbs1":"https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/KBS_1_logo.svg/960px-KBS_1_logo.svg.png","kbs2":"https://upload.wikimedia.org/wikipedia/commons/thumb/2/26/KBS_2_logo.svg/960px-KBS_2_logo.svg.png","mbc":"https://static.wikia.nocookie.net/logopedia/images/b/bd/Munhwa_Broadcasting_Corporation_2023.svg/revision/latest/scale-to-width-down/512","sbs":"https://i.imgur.com/4LHX71N.png","ebs1":"https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/EBS_1TV_Logo.svg/960px-EBS_1TV_Logo.svg.png","ebs2":"https://upload.wikimedia.org/wikipedia/commons/thumb/d/db/EBS_2TV_Logo.svg/960px-EBS_2TV_Logo.svg.png","jtbc":"https://i.imgur.com/fCruRmS.png","채널a":"https://i.imgur.com/W9laHPD.png","tv조선":"https://i.imgur.com/62EwaCG.png","mbn":"https://i.imgur.com/wm3JupT.png","tvn":"https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/Logo_tvN.svg/960px-Logo_tvN.svg.png","ytn":"https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/YTN_logo_2014.svg/960px-YTN_logo_2014.svg.png","연합뉴스":"https://i.imgur.com/3aLkU2I.png","kbs뉴스24":"https://i.imgur.com/ObWsxCy.png","mbc뉴스":"https://upload.wikimedia.org/wikipedia/commons/thumb/7/73/MBC_News_2018.svg/960px-MBC_News_2018.svg.png","sbs뉴스":"https://i.imgur.com/VY6uEE9.png","ktv":"https://i.ibb.co/WkrLDJW/Screenshot-20230714-135036-removebg-preview.png","국회방송":"https://i.imgur.com/UKdB8vD.png","jtbc2":"https://i.imgur.com/kljWkXS.png","jtbc4":"https://i.imgur.com/dgIXpHS.png","채널a플러스":"https://i.imgur.com/2t4Y5FP.png","tv조선2":"https://i.imgur.com/Ev5JoBJ.png","mbn플러스":"https://i.imgur.com/8isw1U0.png","tvnshow":"https://i.imgur.com/8OobmvS.png","tvn드라마":"https://i.imgur.com/f91ieU8.png","tvnstory":"https://i.imgur.com/zy0bmH6.png","kbs드라마":"https://upload.wikimedia.org/wikipedia/commons/thumb/f/f2/KBS_DRAMA.svg/960px-KBS_DRAMA.svg.png","kbsjoy":"https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/KBS_JOY.svg/960px-KBS_JOY.svg.png","kbslife":"https://upload.wikimedia.org/wikipedia/commons/thumb/6/64/KBS_Life.svg/960px-KBS_Life.svg.png","kbsstory":"https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/KBS_Story.svg/960px-KBS_Story.svg.png","sbs플러스":"https://i.imgur.com/8pINOIM.png","sbsfune":"https://i.imgur.com/sxM1XcA.png","sbsfl":"https://i.imgur.com/JKNSd8s.png","mbc드라마":"https://i.imgur.com/Q20rqnX.png","mbc에브리원":"https://i.imgur.com/cnawqOu.png","mbcon":"https://i.imgur.com/AQzgnKD.png","중화":"https://upload.wikimedia.org/wikipedia/zh/8/84/%EC%A4%91%ED%99%94TV_logo.png","mnet":"https://i.imgur.com/DGH10Z2.png","mbcm":"https://static.wikia.nocookie.net/logopedia/images/4/41/MBC_M_logo.svg/revision/latest/scale-to-width-down/512","sbsgolf":"https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/SBS_Golf_logo_2018.svg/960px-SBS_Golf_logo_2018.svg.png","sbsgolf2":"https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/SBS_Golf_logo_2018.svg/960px-SBS_Golf_logo_2018.svg.png","sbssports":"https://i.imgur.com/L2SdLkb.png","kbsworld":"https://i.imgur.com/7DqgELX.png","ytn2":"https://i.imgur.com/g6Nhwmb.png","ytn사이언스":"https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/YTN_%EC%82%AC%EC%9D%B4%EC%96%B8%EC%8A%A4_%EB%A1%9C%EA%B3%A0_%EB%89%B4.png/960px-YTN_%EC%82%AC%EC%9D%B4%EC%96%B8%EC%8A%A4_%EB%A1%9C%EA%B3%A0_%EB%89%B4.png","history":"https://upload.wikimedia.org/wikipedia/commons/thumb/0/01/History_%282021%29.svg/500px-History_%282021%29.svg.png","sbsbiz":"https://i.imgur.com/gwA98UT.png","아리랑":"https://i.imgur.com/Asu5pE9.png","tbs":"https://i.imgur.com/iOnWS6V.png","abn":"https://www.abn.co.kr/resources/images/logo.png","농협":"https://i.imgur.com/DfECkgB.png","복지":"https://i.imgur.com/IkFev3L.png","ebskids":"https://i.imgur.com/62oo8Bx.png","ebs플러스1":"https://i.imgur.com/aCeuhon.png","ebs플러스2":"https://i.imgur.com/pllIMGi.png","ebsenglish":"https://i.imgur.com/5wLJzb0.png","kbskids":"https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/KBS_kids.svg/960px-KBS_kids.svg.png","애니맥스":"https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Animax.png/960px-Animax.png","투니버스":"https://i.imgur.com/Fesm8M3.png","애니박스":"https://i.imgur.com/5SZfGmy.png","방송대학":"https://i.imgur.com/7s6JtcU.png","mbcnet":"https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/MBCNET_%EB%A1%9C%EA%B3%A0.svg/960px-MBCNET_%EB%A1%9C%EA%B3%A0.svg.png","id:tjmbc":"https://i.imgur.com/HCbvAiM.png","id:kjmbc":"https://i.imgur.com/wmGJgYh.png","id:chmbc":"https://i.imgur.com/lthyx2P.png","id:ysmbc":"https://i.imgur.com/3VSuYsn.png","id:mpmbc":"https://i.imgur.com/5oraHc0.png","id:jjmbc":"https://i.imgur.com/JM4rxGU.png","id:knn":"https://i.imgur.com/gaBq1Lz.png","id:kbc":"https://i.imgur.com/Srsw4Mi.png","id:ubc":"https://i.imgur.com/BBCoqIf.png","id:tjb":"https://i.imgur.com/grr8BlV.png","id:cjb":"https://i.imgur.com/zVunmpQ.png"};
 function buildChannels(){
   const raw = [];
   DATA.forEach(t => t.groups.forEach(g => g.items.forEach(it => raw.push({
@@ -557,6 +561,10 @@ function buildChannels(){
     const best = raw.find(r => c.ids.includes(r.id) && r.type === c.sources[0].type && r.url === c.sources[0].url);
     if (best && srcRank(c.sources[0]) <= 1) c.name = best.name;
     c.type = c.sources[0].type; c.url = c.sources[0].url;
+    if (c.type !== 'stvp') {
+      const k = REGION[c.id] ? 'id:' + c.id : norm(c.name);
+      c.logo = LOGOS[k] || (c.logo && !/760515\.xyz/.test(c.logo) ? c.logo : '');
+    }
   });
   const order = t => TABS.indexOf(t);
   out.sort((a, b) => order(a.tab) - order(b.tab));
