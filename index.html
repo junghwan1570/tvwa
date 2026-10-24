@@ -455,10 +455,7 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const hm = sec => { const d = new Date(sec * 1000); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); };
 const nowSec = () => Date.now() / 1000;
 
-const ALL = [];
-DATA.forEach(t => t.groups.forEach(g => g.items.forEach(it => ALL.push({
-  id: it[0], name: it[1], type: it[2], url: it[3], logo: it[5] && /^https?:/.test(it[5]) ? it[5] : '', group: g.g, tab: t.tab
-}))));
+let ALL = [];
 
 const FAV = '★ 즐겨찾기';
 let view = 'live', chip = '전체', query = '';
@@ -513,6 +510,66 @@ async function loadEpg(force){
   refreshAll();
 }
 
+// ───────── 채널 정리: 종류별 분류 + 같은 채널 합치기 ─────────
+const TABS = ['지상파', '지역방송', '종편', '뉴스', '드라마·예능', '음악', '스포츠', '교양·경제', '어린이·교육', '영화', '삼성TV'];
+const CAT = {
+  지상파: ['kbs1', 'kbs2', 'mbc', 'sbs', 'ebs1', 'ebs2'],
+  종편: ['jtbc', '채널a', 'tv조선', 'mbn', 'tvn'],
+  뉴스: ['ytn', '연합뉴스', 'kbs뉴스24', 'mbc뉴스', 'sbs뉴스', 'jtbc뉴스', 'tv조선뉴스', '국회방송', 'ktv'],
+  '드라마·예능': ['jtbc2', 'jtbc4', '채널a플러스', 'tv조선2', 'mbn플러스', 'tvnshow', 'tvn드라마', 'tvnstory', 'kbs드라마', 'kbsjoy', 'kbslife', 'kbsstory', 'sbs플러스', 'sbsfune', 'sbsfl', 'mbc드라마', 'mbc에브리원', 'mbcon', '라이프타임', '중화'],
+  음악: ['mnet', 'sbskpop', 'mbcm'],
+  스포츠: ['sbsgolf', 'sbsgolf2', 'sbssports'],
+  '어린이·교육': ['ebskids', 'ebs플러스1', 'ebs플러스2', 'ebsenglish', 'kbskids', '애니맥스', '투니버스', '애니박스', '방송대학'],
+};
+const CAT_OF = {};
+for (const [k, list] of Object.entries(CAT)) list.forEach(n => CAT_OF[n] = k);
+Object.assign(ALIAS, { kbs월드: 'kbsworld', ebs1tv: 'ebs1', ebs2tv: 'ebs2', ebs: 'ebs1', ebs키즈: 'ebskids', mbc드라마넷: 'mbc드라마', 'tvchosun2': 'tv조선2', 'tv조선2': 'tv조선2', kbs1tv: 'kbs1', kbs2tv: 'kbs2', 투니버스: '투니버스', 방송대학: '방송대학' });
+function catOf(c){
+  if (c.type === 'stvp') return '삼성TV';
+  if (REGION[c.id] || norm(c.name) === 'mbcnet') return '지역방송';
+  if (/^한국영화/.test(c.name)) return '영화';
+  return CAT_OF[norm(c.name)] || '교양·경제';
+}
+function srcRank(x){
+  if (/^(kbs|sbs|mbc)$/.test(x.type)) return 0;
+  if (x.type === 'yt') return 3;
+  if (/760515\.xyz|epg\.pw/.test(x.url)) return 2;
+  return 1;
+}
+function buildChannels(){
+  const raw = [];
+  DATA.forEach(t => t.groups.forEach(g => g.items.forEach(it => raw.push({
+    id: it[0], name: it[1], type: it[2], url: it[3], logo: it[5] && /^https?:/.test(it[5]) ? it[5] : '', group: g.g
+  }))));
+  const byKey = new Map(), out = [];
+  raw.forEach(r => {
+    const key = r.type === 'stvp' ? 'stvp:' + r.url : (REGION[r.id] ? 'id:' + r.id : norm(r.name));
+    let c = byKey.get(key);
+    if (!c) {
+      c = { id: r.id, ids: [r.id], name: r.name, logo: r.logo, sources: [], tab: catOf(r) };
+      c.group = r.type === 'stvp' ? r.group : REGION[r.id] ? (REGION[r.id] === 'mbc' ? '지역 MBC' : '지역 민방') : c.tab;
+      byKey.set(key, c); out.push(c);
+    } else { c.ids.push(r.id); if (!c.logo && r.logo) c.logo = r.logo; }
+    c.sources.push({ type: r.type, url: r.url });
+  });
+  out.forEach(c => {
+    c.sources.sort((a, b) => srcRank(a) - srcRank(b));
+    const best = raw.find(r => c.ids.includes(r.id) && r.type === c.sources[0].type && r.url === c.sources[0].url);
+    if (best && srcRank(c.sources[0]) <= 1) c.name = best.name;
+    c.type = c.sources[0].type; c.url = c.sources[0].url;
+  });
+  const order = t => TABS.indexOf(t);
+  out.sort((a, b) => order(a.tab) - order(b.tab));
+  return out;
+}
+ALL = buildChannels();
+// 예전 즐겨찾기·최근 채널 id를 합쳐진 채널 id로 옮김
+(() => {
+  const map = {}; ALL.forEach(c => c.ids.forEach(i => map[i] = c.id));
+  favs = [...new Set(favs.map(i => map[i] || i))]; store.set('mw_favs', favs);
+  const last = store.get('mw_last', null); if (last && map[last]) store.set('mw_last', map[last]);
+})();
+
 // ───────── 목록 ─────────
 function filtered(){
   let a = chip === FAV ? ALL.filter(c => favs.includes(c.id)) : (chip === '전체' ? ALL : ALL.filter(c => c.tab === chip));
@@ -523,7 +580,7 @@ function filtered(){
   return a;
 }
 function chipsHTML(){
-  return ['전체', FAV, ...DATA.map(t => t.tab)].map(t => `<button class="chip${t === chip ? ' on' : ''}" data-t="${esc(t)}">${esc(t)}</button>`).join('');
+  return ['전체', FAV, ...TABS.filter(t => ALL.some(c => c.tab === t))].map(t => `<button class="chip${t === chip ? ' on' : ''}" data-t="${esc(t)}">${esc(t)}</button>`).join('');
 }
 function renderChips(){ $('chips').innerHTML = chipsHTML(); $('gchips').innerHTML = chipsHTML(); }
 function logoHTML(c){
@@ -666,32 +723,40 @@ function modesFor(c){
 async function play(c){
   cur = c; store.set('mw_last', c.id);
   stop(); markCurrent(); updateNow(); setQ('');
-  $('bPause').parentElement.hidden = c.type === 'yt';
   phShow('<div class="spin"></div><h4>채널 불러오는 중…</h4>');
-  if (c.type === 'yt') {
-    frm.hidden = false; phHide();
-    frm.src = `https://www.youtube.com/embed/live_stream?channel=${encodeURIComponent(c.url)}&autoplay=1&playsinline=1`;
-    return;
-  }
-  tryMode(c, modesFor(c), 0, []);
+  playSrc(c, 0, []);
 }
-async function tryMode(c, modes, i, log){
+function playSrc(c, si, log){
   if (cur !== c) return;
-  if (i >= modes.length) {
+  const s = c.sources[si];
+  $('bPause').parentElement.hidden = s && s.type === 'yt';
+  if (!s) {
     const all403 = log.length && log.every(l => /403|401|거부/.test(l));
     const head = all403 ? '방송사가 접근을 거부했습니다. 국내 IP나 방송사 자체 사이트에서만 재생을 허용하는 채널로 보입니다.' : '이 채널을 재생할 방법을 찾지 못했습니다.';
     return showErr('재생 오류', head + '<br><small>' + log.map(esc).join('<br>') + '</small>');
   }
+  if (si > 0) phShow(`<div class="spin"></div><h4>다른 방송 출처로 연결 중… (${si + 1}/${c.sources.length})</h4>`);
+  if (s.type === 'yt') {
+    if (hls) { hls.destroy(); hls = null; }
+    vid.hidden = true; frm.hidden = false; phHide();
+    frm.src = `https://www.youtube.com/embed/live_stream?channel=${encodeURIComponent(s.url)}&autoplay=1&playsinline=1`;
+    return;
+  }
+  tryMode(c, s, si, modesFor(s), 0, log);
+}
+async function tryMode(c, s, si, modes, i, log){
+  if (cur !== c) return;
+  if (i >= modes.length) return playSrc(c, si + 1, log);
   const m = modes[i], tokP = m.length === 2 && m[0] === 'p', stP = m[m.length - 1] === 'p';
-  if (i > 0) phShow(`<div class="spin"></div><h4>다른 경로로 연결 중… (${i + 1}/${modes.length})</h4><p>${MODE_NAME[m]}</p>`);
+  if (i > 0) phShow(`<div class="spin"></div><h4>다른 경로로 연결 중…</h4><p>${MODE_NAME[m]}</p>`);
   let url;
-  try { url = await resolveUrl(c, tokP); }
-  catch (e) { log.push(`${MODE_NAME[m]}: ${e.message}`); return tryMode(c, modes, i + 1, log); }
+  try { url = await resolveUrl(s, tokP); }
+  catch (e) { log.push(`${MODE_NAME[m]}: ${e.message}`); return tryMode(c, s, si, modes, i + 1, log); }
   if (cur !== c) return;
   if (stP) url = TOKEN_PROXY + '?stream=' + encodeURIComponent(url);
   startHls(url, c, !stP,
-    () => store.set('mw_mode_' + c.type, m),
-    why => { log.push(`${MODE_NAME[m]}: ${why}`); tryMode(c, modes, i + 1, log); });
+    () => store.set('mw_mode_' + s.type, m),
+    why => { log.push(`${MODE_NAME[m]}: ${why}`); tryMode(c, s, si, modes, i + 1, log); });
 }
 function nativePlay(url, c, ok, fail){
   vid.hidden = false;
@@ -774,7 +839,7 @@ function updateSettings(){
   $('epgInfo').textContent = EPG && EPG.t
     ? `${new Date(EPG.t * 1000).toLocaleString('ko-KR')} 기준 · 출처 ${(EPG.src || []).join(', ') || '없음'} · 편성 정보 있는 채널 ${withEpg}/${ALL.length}개` + (EPG.err && EPG.err.length ? ` · 실패: ${EPG.err.join(', ')}` : '')
     : '아직 편성표를 받지 못했습니다.' + (EPG && EPG.err ? ' ' + EPG.err.join(', ') : '');
-  $('chInfo').textContent = `전체 ${ALL.length}개 · ` + DATA.map(t => `${t.tab} ${t.groups.reduce((s, g) => s + g.items.length, 0)}`).join(' · ');
+  $('chInfo').textContent = `전체 ${ALL.length}개 · ` + TABS.map(t => [t, ALL.filter(c => c.tab === t).length]).filter(x => x[1]).map(x => `${x[0]} ${x[1]}`).join(' · ');
 }
 let toastT;
 function toast(m){ const t = $('toast'); t.textContent = m; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 1800); }
