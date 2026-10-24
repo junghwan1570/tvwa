@@ -253,7 +253,7 @@ const EBS=p=>`https://ebsonair.ebs.co.kr/${p}familypc/familypc1m/playlist.m3u8`;
 const KAPI=c=>'https://pwwwapi.kbs.co.kr/api/v1/landing/live/channel_code/'+c;
 
 // 방송사 API가 CORS로 막히면 Cloudflare Worker 주소를 여기에 넣으세요 (예: 'https://tvtoken.내계정.workers.dev')
-const DEFAULT_PROXY = 'https://tvtoken.junghwan1570.workers.dev';
+const DEFAULT_PROXY = 'https://junghwan1570.synology.me:8443'; // 집 NAS 국내 중계
 let TOKEN_PROXY = (()=>{ try { const v = localStorage.getItem('mw_proxy'); return v === null ? DEFAULT_PROXY : v; } catch { return DEFAULT_PROXY; } })();
 
 async function getText(url, viaProxy){
@@ -496,14 +496,14 @@ function nowNext(c){
 }
 async function loadEpg(force){
   const cached = store.get('mw_epg', null);
-  if (!force && cached && Date.now() / 1000 - cached.t < 900) { EPG = cached; buildIdx(); return; }
+  if (!force && cached && cached.proxy === TOKEN_PROXY && Date.now() / 1000 - cached.t < 900) { EPG = cached; buildIdx(); return; }
   if (!TOKEN_PROXY) { EPG = cached; buildIdx(); return; }
   try {
     const r = await fetch(TOKEN_PROXY + '?epg=1', { cache: force ? 'reload' : 'default' });
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const j = await r.json();
     if (!j.tv && !j.stvp) throw new Error('형식 오류');
-    EPG = j; store.set('mw_epg', j);
+    j.proxy = TOKEN_PROXY; EPG = j; store.set('mw_epg', j);
   } catch (e) {
     EPG = cached || { t: 0, tv: {}, stvp: {}, src: [], err: ['편성표를 받지 못했습니다: ' + e.message] };
     if (cached) EPG.err = [...(cached.err || []), '최신 편성표를 받지 못해 이전 자료를 씁니다'];
