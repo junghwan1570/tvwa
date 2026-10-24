@@ -1,510 +1,556 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>명왕사신TV - IPTV Player</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <!-- HLS.js for Streaming -->
-    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        /* Custom scrollbar */
-        ::-webkit-scrollbar {
-            width: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #1f2937;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #374151;
-            border-radius: 3px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #4b5563;
-        }
-    </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b0b0d">
+<title>명왕사신TV</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.7/hls.min.js"></script>
+<style>
+:root{color-scheme:dark;--bg:#0a0a10;--sf:#12121a;--card:#1a1a24;--card-h:#222230;--bdr:#2a2a38;--tx:#e8e8f0;--tx2:#8888a0;--tx3:#5a5a70;--red:#e53e3e;--grn:#38d67a;--amb:#f0b429;--blu:#4da6ff;--yt:#ff4444;--glow:0 0 20px rgba(229,62,62,.15)}
+*{box-sizing:border-box;margin:0}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--tx);font:16px/1.5 'Noto Sans KR',-apple-system,BlinkMacSystemFont,sans-serif;-webkit-font-smoothing:antialiased;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px));padding-block:0;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:30}
+button,select{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:linear-gradient(var(--bg) 85%,transparent);padding-top:14px;padding-bottom:6px}
+.top{display:flex;align-items:center;gap:12px}
+.brand{font-weight:900;font-size:26px;letter-spacing:-.5px;white-space:nowrap;text-shadow:0 0 24px rgba(229,62,62,.3)}.brand b{color:var(--red)}
+.clock{font-size:13px;color:var(--tx3);font-variant-numeric:tabular-nums;white-space:nowrap}
+#q{flex:1;min-width:0;background:var(--sf);border:1px solid var(--bdr);color:var(--tx);border-radius:14px;padding:12px 18px;font:inherit;font-size:16px;outline:none;min-height:52px}
+#q:focus{border-color:var(--red);box-shadow:var(--glow)}
+.ib{background:var(--sf);border:1px solid var(--bdr);border-radius:14px;min-width:52px;min-height:52px;padding:0 16px;white-space:nowrap;font-size:18px}
+.ib:active{background:var(--card-h)}
+.tabs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin-top:10px;padding-bottom:2px;border-bottom:1px solid var(--bdr)}
+.tabs::-webkit-scrollbar{display:none}
+.tab{background:none;border:0;border-bottom:3px solid transparent;padding:12px 18px 10px;color:var(--tx2);font-weight:500;font-size:16px;white-space:nowrap;min-height:52px;transition:color .15s}
+.tab.on{color:var(--tx);border-bottom-color:var(--red);font-weight:700}
+.tab:active{color:var(--tx)}
+.banner{margin-top:10px;background:#ff5a5a1a;border:1px solid #ff5a5a55;color:#ffb3b3;border-radius:14px;padding:12px 16px;font-size:14px}
+
+.layout{display:grid;gap:20px;padding:16px 0 28px}
+@media(min-width:900px){.layout.has-player{grid-template-columns:minmax(0,2fr) minmax(0,1fr)}.layout.has-player .pcol{position:sticky;top:calc(env(safe-area-inset-top,0px) + 130px);align-self:start}}
+.player{background:var(--sf);border:1px solid var(--bdr);border-radius:18px;overflow:hidden;box-shadow:0 4px 30px rgba(0,0,0,.5)}
+.p-frame{position:relative;aspect-ratio:16/9;max-width:100%;background:#000}
+.p-frame video,.p-frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#000}
+.ph{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:24px;background:radial-gradient(ellipse,#14141c,#000 72%);z-index:2}
+.ph .spin{width:40px;height:40px;border:3px solid #2a2a3a;border-top-color:var(--red);border-radius:50%;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.ph h4{font-size:18px;font-weight:700}
+.ph p{color:var(--tx2);font-size:14px;max-width:460px;line-height:1.6}
+.ph .acts{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.ph .go{background:var(--red);border:0;color:#fff;border-radius:14px;padding:0 24px;font-weight:700;min-height:52px;font-size:15px}
+.ph .go.sec{background:var(--card);border:1px solid var(--bdr);color:var(--tx)}
+.p-bar{display:flex;align-items:center;gap:10px;padding:14px 18px;flex-wrap:wrap}
+.p-title{flex:1;min-width:0}
+.p-title h2{font-size:20px;font-weight:700;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.p-title small{display:block;color:var(--tx3);font-size:12px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pb{background:var(--card);border:1px solid var(--bdr);border-radius:12px;padding:0 16px;min-height:48px;font-size:14px;color:var(--tx2);white-space:nowrap;transition:background .1s}
+.pb:active{background:var(--card-h)}
+.pb.fav.on{color:var(--amb);border-color:#e8b33a55}
+.pb.on{color:var(--tx);border-color:var(--tx2)}
+
+.group{margin-bottom:24px}
+.g-head{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.g-head h3{font-size:17px;font-weight:700}
+.g-head span{font-size:12px;color:var(--tx3)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px}
+.layout.has-player .grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+.ch{position:relative;display:flex;flex-direction:column;gap:8px;justify-content:space-between;background:var(--card);border:1px solid var(--bdr);border-radius:14px;padding:14px;min-height:90px;text-align:left;transition:background .12s,border-color .12s,box-shadow .12s;min-width:0;-webkit-tap-highlight-color:transparent}
+.ch:active{background:var(--card-h)}
+.ch.on{border-color:var(--red);box-shadow:inset 0 0 0 1px var(--red),var(--glow)}
+.ch-top{display:flex;gap:10px;align-items:center;min-width:0;padding-right:16px}
+.ch-top img{width:32px;height:32px;object-fit:contain;border-radius:6px;background:#ffffff0a;flex:none}
+.ch-n{font-size:15px;font-weight:700;line-height:1.3;min-width:0;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.ch-m{display:flex;gap:5px;flex-wrap:wrap}
+.ch .star{position:absolute;top:10px;right:10px;font-size:13px;color:var(--amb)}
+.bd{font-size:10.5px;font-weight:700;padding:3px 7px;border-radius:5px;letter-spacing:.2px;white-space:nowrap;font-style:normal}
+.s-free{background:#38d67a1a;color:var(--grn)}
+.t-hls{background:#4da6ff1a;color:var(--blu)}.t-yt{background:#ff44441a;color:var(--yt)}
+.empty{color:var(--tx3);text-align:center;padding:48px 0;font-size:15px}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:#1e1e2a;border:1px solid var(--bdr);color:var(--tx);padding:12px 20px;border-radius:14px;font-size:14px;z-index:40;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90vw;box-shadow:0 4px 20px rgba(0,0,0,.5)}
+.toast.show{opacity:1}
+footer{color:var(--tx3);font-size:12px;text-align:center;padding:16px 0 24px;border-top:1px solid var(--bdr)}
+@media(max-width:640px){.clock{display:none}.brand{font-size:22px}.grid,.layout.has-player .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.ch{min-height:82px;padding:12px}.p-title{flex-basis:100%}.p-title h2{font-size:18px}.pb{flex:1}}
+</style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans">
+<body>
 
-    <!-- Header -->
-    <header class="bg-slate-900 border-b border-slate-800 px-6 py-4 flex items-center justify-between sticky top-0 z-50">
-        <div class="flex items-center space-x-3">
-            <i class="fa-solid fa-tv text-indigo-500 text-2xl"></i>
-            <h1 class="text-xl font-bold tracking-wide bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
-                명왕사신TV
-            </h1>
-        </div>
-        <div class="flex items-center space-x-2 text-sm text-slate-400">
-            <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span id="channel-count">채널 불러오는 중...</span>
-        </div>
-    </header>
+<header>
+  <div class="top">
+    <div class="brand">명왕사신<b>TV</b></div>
+    <div class="clock" id="clock"></div>
+    <input id="q" type="search" placeholder="채널 검색 (한국어·영문)" aria-label="채널 검색">
+    <button class="ib" id="favTop" title="즐겨찾기">★</button>
+  </div>
+  <div class="banner" id="cdnBanner" hidden>영상 재생 라이브러리(hls.js)를 불러오지 못했습니다. 브라우저 기본 재생이 되는 채널만 열립니다.</div>
+  <nav class="tabs" id="tabs"></nav>
+</header>
 
-    <!-- Main Content Area -->
-    <main class="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-4 p-4 max-w-[1920px] w-full mx-auto">
-        
-        <!-- Video Player Section (LGs: 3 Cols) -->
-        <section class="lg:col-span-3 flex flex-col bg-black rounded-2xl overflow-hidden border border-slate-800 shadow-2xl">
-            <div class="relative w-full aspect-video bg-black flex items-center justify-center group">
-                <video id="video-player" class="w-full h-full object-contain" controls autoplay></video>
-                <div id="player-placeholder" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/90 text-slate-400 z-10">
-                    <i class="fa-solid fa-play-circle text-6xl text-indigo-500 mb-4 animate-bounce"></i>
-                    <p class="text-lg">재생할 채널을 오른쪽 목록에서 선택해 주세요.</p>
-                </div>
-            </div>
-            
-            <!-- Player Info Bar -->
-            <div class="p-4 bg-slate-900 flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-t border-slate-800">
-                <div>
-                    <h2 id="current-title" class="text-lg font-bold text-slate-100">채널을 선택하세요</h2>
-                    <p id="current-url" class="text-xs text-slate-500 truncate max-w-md">Stream URL</p>
-                </div>
-                <div class="flex items-center space-x-2">
-                    <button id="btn-reload" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-lg transition">
-                        <i class="fa-solid fa-rotate-right mr-1"></i> 새로고침
-                    </button>
-                </div>
-            </div>
-        </section>
+<div class="layout" id="layout">
+  <div class="pcol" id="pcol" hidden>
+    <section class="player">
+      <div class="p-frame" id="pframe">
+        <video id="vid" playsinline hidden></video>
+        <iframe id="frm" hidden allow="autoplay; fullscreen; picture-in-picture; encrypted-media" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
+        <div class="ph" id="ph"></div>
+      </div>
+      <div class="p-bar">
+        <div class="p-title"><h2 id="pName"></h2><small id="pSub"></small></div>
+        <button class="pb" id="pMute">🔊 소리</button>
+        <button class="pb fav" id="pFav">☆ 즐겨찾기</button>
+        <button class="pb" id="pFull">전체화면</button>
+        <button class="pb" id="pClose">✕ 목록</button>
+      </div>
+    </section>
+  </div>
+  <main id="list"></main>
+</div>
+<footer>명왕사신TV</footer>
+<div class="toast" id="toast"></div>
 
-        <!-- Channel List Section (LGs: 1 Col) -->
-        <section class="lg:col-span-1 bg-slate-900 rounded-2xl border border-slate-800 flex flex-col h-[600px] lg:h-auto overflow-hidden">
-            <!-- Search & Filter Bar -->
-            <div class="p-4 border-b border-slate-800 flex flex-col gap-3">
-                <div class="relative">
-                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm"></i>
-                    <input type="text" id="search-input" placeholder="채널 이름 검색..." 
-                           class="w-full bg-slate-950 text-slate-200 text-sm rounded-xl pl-9 pr-4 py-2 border border-slate-800 focus:outline-none focus:border-indigo-500 transition">
-                </div>
-            </div>
+<script>
+'use strict';
 
-            <!-- List Item Container -->
-            <div id="channel-list" class="flex-1 overflow-y-auto p-2 space-y-1">
-                <!-- Channels rendered by JS -->
-            </div>
-        </section>
-    </main>
+const EBS=p=>`https://ebsonair.ebs.co.kr/${p}familypc/familypc1m/playlist.m3u8`;
+const KAPI=c=>'https://pwwwapi.kbs.co.kr/api/v1/landing/live/channel_code/'+c;
 
-    <!-- M3U Playlist & Script Integration -->
-    <script>
-        // M3U Playlist Raw Data
-        const playlistRaw = `#EXTM3U
-#EXTINF:-1 tvg-id="" tvg-name="YTN" tvg-logo="" group-title="",YTN
-https://backup.760515.xyz/playlist/YTN-playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-name="YTN2" tvg-logo="" group-title="",YTN2
-https://backup.760515.xyz/playlist/YTN2-playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-name="YTN사이언스" tvg-logo="" group-title="",YTN사이언스
-https://backup.760515.xyz/playlist/YTN%EC%82%AC%EC%9D%B4%EC%96%B8%EC%8A%A4-playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-name="연합뉴스TV" tvg-logo="" group-title="",연합뉴스TV
-https://backup.760515.xyz/playlist/%EC%97%B0%ED%95%A9%EB%89%B4%EC%8A%A4TV-playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-name="JTBC" tvg-logo="" group-title="",JTBC
-https://backup.760515.xyz/playlist/JTBC-playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-name="JTBC2" tvg-logo="" group-title="",JTBC2
-https://backup.760515.xyz/playlist/JTBC2-playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-name="JTBC4" tvg-logo="" group-title="",JTBC4
-https://backup.760515.xyz/playlist/JTBC4-playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-name="tvN" tvg-logo="" group-title="",tvN
-https://backup.760515.xyz/playlist/tvN-playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-name="tvN SHOW" tvg-logo="" group-title="",tvN SHOW
-https://backup.760515.xyz/playlist/tvN%20SHOW-playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-name="tvN DRAMA" tvg-logo="" group-title="",tvN DRAMA
-https://backup.760515.xyz/playlist/tvN%20DRAMA-playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-name="tvN STORY" tvg-logo="" group-title="",tvN STORY
-https://backup.760515.xyz/playlist/tvN%20STORY-playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-name="채널A" tvg-logo="" group-title="",채널A
-https://backup.760515.xyz/playlist/%EC%B1%84%EB%84%90A-playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-name="채널A플러스" tvg-logo="" group-title="",채널A플러스
-https://backup.760515.xyz/playlist/%EC%B1%84%EB%84%90A%ED%94%8C%EB%9F%AC%EC%8A%A4-playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-name="TV CHOSUN" tvg-logo="" group-title="",TV CHOSUN
-https://backup.760515.xyz/playlist/TV%20CHOSUN-playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-name="TV CHOSUN 2" tvg-logo="" group-title="",TV CHOSUN 2
-https://backup.760515.xyz/playlist/TV%20CHOSUN%202-playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-name="Mnet" tvg-logo="" group-title="",Mnet
-https://backup.760515.xyz/playlist/Mnet-playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-name="MBN" tvg-logo="" group-title="",MBN
-https://backup.760515.xyz/playlist/MBN-playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-name="MBN 플러스" tvg-logo="" group-title="",MBN 플러스
-https://backup.760515.xyz/playlist/MBN%20%ED%94%8C%EB%9F%AC%EC%8A%A4-playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-name="LIFETIME" tvg-logo="" group-title="",LIFETIME
-https://backup.760515.xyz/playlist/LIFETIME-playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-name="중화TV" tvg-logo="" group-title="",중화TV
-https://backup.760515.xyz/playlist/%EC%A4%91%ED%99%9ATV-playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-name="히스토리" tvg-logo="" group-title="",히스토리
-https://backup.760515.xyz/playlist/%ED%9E%88%EC%8A%A4%ED%86%A0%EB%A6%AC-playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-name="국회방송" tvg-logo="" group-title="",국회방송
-https://backup.760515.xyz/playlist/%EA%B5%AD%ED%9A%8C%EB%B0%A9%EC%86%A1-playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-name="ANIBOX" tvg-logo="" group-title="",ANIBOX
-https://backup.760515.xyz/playlist/ANIBOX-playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-name="애니맥스" tvg-logo="" group-title="",애니맥스
-https://backup.760515.xyz/playlist/%EC%95%A0%EB%8B%88%EB%A7%A4%EC%8A%A4-playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-name="투니버스" tvg-logo="" group-title="",투니버스
-https://backup.760515.xyz/playlist/%ED%88%AC%EB%8B%88%EB%B2%84%EC%8A%A4-playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-name="KBS1" tvg-logo="" group-title="",KBS1
-https://backup.760515.xyz/playlist/KBS1-playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-name="KBS2" tvg-logo="" group-title="",KBS2
-https://backup.760515.xyz/playlist/KBS2-playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-name="KBS드라마" tvg-logo="" group-title="",KBS드라마
-https://backup.760515.xyz/playlist/KBS%EB%93%9C%EB%9D%BC%EB%A7%8A-playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-name="KBS조이" tvg-logo="" group-title="",KBS조이
-https://backup.760515.xyz/playlist/KBS%EC%A1%B0%EC%9D%B4-playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-name="KBS키즈" tvg-logo="" group-title="",KBS키즈
-https://backup.760515.xyz/playlist/KBS%ED%82%A4%EC%A6%88-playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-name="KBS LIFE" tvg-logo="" group-title="",KBS LIFE
-https://backup.760515.xyz/playlist/KBS%20LIFE-playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-name="KBS Story" tvg-logo="" group-title="",KBS Story
-https://backup.760515.xyz/playlist/KBS%20Story-playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-name="KBS WORLD" tvg-logo="" group-title="",KBS WORLD
-https://backup.760515.xyz/playlist/KBS%20WORLD-playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-name="KBS24" tvg-logo="" group-title="",KBS24
-https://backup.760515.xyz/playlist/KBS24-playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-name="SBS" tvg-logo="" group-title="",SBS
-https://backup.760515.xyz/playlist/SBS-playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-name="SBS플러스" tvg-logo="" group-title="",SBS플러스
-https://backup.760515.xyz/playlist/SBS%ED%94%8C%EB%9F%AC%EC%8A%A4-playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-name="SBS FunE" tvg-logo="" group-title="",SBS FunE
-https://backup.760515.xyz/playlist/SBS%20FunE-playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-name="SBS Life" tvg-logo="" group-title="",SBS Life
-https://backup.760515.xyz/playlist/SBS%20Life-playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-name="SBS KPOP" tvg-logo="" group-title="",SBS KPOP
-https://backup.760515.xyz/playlist/SBS%20KPOP-playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-name="SBS골프" tvg-logo="" group-title="",SBS골프
-https://backup.760515.xyz/playlist/SBS%EA%B3%A8%ED%94%84-playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-name="SBS Golf2" tvg-logo="" group-title="",SBS Golf2
-https://backup.760515.xyz/playlist/SBS%20Golf2-playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-name="SBS스포츠" tvg-logo="" group-title="",SBS스포츠
-https://backup.760515.xyz/playlist/SBS%EC%8A%A4%ED%8F%AC%EC%B8%A0-playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-name="SBS Biz" tvg-logo="" group-title="",SBS Biz
-https://backup.760515.xyz/playlist/SBS%20Biz-playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-name="MBC" tvg-logo="" group-title="",MBC
-https://backup.760515.xyz/playlist/MBC-playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-name="MBC드라마넷" tvg-logo="" group-title="",MBC드라마넷
-https://backup.760515.xyz/playlist/MBC%EB%93%9C%EB%9D%BC%EB%A7%8A%EB%84%B7-playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-name="MBC에브리원" tvg-logo="" group-title="",MBC에브리원
-https://backup.760515.xyz/playlist/MBC%EC%97%90%EB%B8%8C%EB%A6%AC%EC%9B%90-playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-name="MBC M" tvg-logo="" group-title="",MBC M
-https://backup.760515.xyz/playlist/MBC%20M-playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-name="MBC ON" tvg-logo="" group-title="",MBC ON
-https://backup.760515.xyz/playlist/MBC%20ON-playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-name="MBCNET" tvg-logo="" group-title="",MBCNET
-https://backup.760515.xyz/playlist/MBCNET-playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-name="EBS1" tvg-logo="" group-title="",EBS1
-https://backup.760515.xyz/playlist/EBS1-playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-name="EBS2" tvg-logo="" group-title="",EBS2
-https://backup.760515.xyz/playlist/EBS2-playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-name="EBS+1" tvg-logo="" group-title="",EBS+1
-https://backup.760515.xyz/playlist/EBS+1-playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-name="EBS+2" tvg-logo="" group-title="",EBS+2
-https://backup.760515.xyz/playlist/EBS+2-playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-name="EBS English" tvg-logo="" group-title="",EBS English
-https://backup.760515.xyz/playlist/EBS%20English-playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-name="한국영화 1" tvg-logo="" group-title="",한국영화 1
-https://backup.760515.xyz/playlist/%ED%95%9C%EA%B5%AD%EC%96%B1%ED%99%94%201-playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-name="한국영화 2" tvg-logo="" group-title="",한국영화 2
-https://backup.760515.xyz/playlist/%ED%95%9C%EA%B5%AD%EC%96%B1%ED%99%94%202-playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-name="한국영화 3" tvg-logo="" group-title="",한국영화 3
-https://backup.760515.xyz/playlist/%ED%95%9C%EA%B5%AD%EC%96%B1%ED%99%94%203-playlist.m3u8
-#EXTINF:-1 tvg-id="" tvg-name="Samsung Television Network" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KR1300003KW_20260915T035354SQUARE.png&h=120" group-title="삼성TV 실시간",Samsung Television Network
-https://ads.its-newid.net/api/manifest.m3u8?tp=samsung_tvplus&channel_name=stn&channel_id=newid_379_445a1caa&apikey=b97c7a7d0c82424bb607e141ef215779&auth=975d421a-5eda2c9e-5d79756d-846936a8&ads.live=[CONTENT_LIVE]&ads.device_did=%7BPSID%7D&ads.ifa=[IFA]&ads.ifatype=[IFA_TYPE]&ads.lat=[LMT]&ads.donotsell=[DNS]&ads.ip=[IP]&ads.gdpr=[GDPR]&ads.gdprconsent=[GDPR_CONSENT]&ads.country=[COUNTRY]&ads.us_privacy={US_PRIVACY}&ads.appstoreurl=[APP_STOREURL]&ads.bundleid=[APP_BUNDLE]&ads.app.name={APP_NAME}&ads.appversion=[APP_VERSION]&ads.devicetype=[DEVICE_TYPE]&ads.devicemake=[DEVICE_MAKE]&ads.devicemodel=[DEVICE_MODEL]&ads.targetad=[TARGETAD_ALLOWED]&ads.content_title=[PROGRAM_TITLE]&ads.content_series=[SERIES_TITLE]&ads.content_season=[SEASON_TITLE]&ads.content_episode=[EPISODE_NO]&ads.content_length=[CONTENT_LENGTH]&ads.device.dnt={TARGETOPT}&ads.app_domain={APP_DOMAIN}&nh=true&live_endlist=1&ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KR1300003KW
-#EXTINF:-1 tvg-id="" tvg-name="TV조선" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KR3700002JT_20260901T053954SQUARE.png&h=120" group-title="삼성TV 실시간",TV조선
-https://cc-rcwls9v85g7qx.akamaized.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-rcwls9v85g7qx/smartlive/master.smil/playlist.m3u8?ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KR3700002JT
-#EXTINF:-1 tvg-id="" tvg-name="YTN" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KRBD2400001XD_20260422T013918SQUARE.png&h=120" group-title="삼성TV 뉴스",YTN
-https://cc-yjex7rgns02ux.akamaized.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-yjex7rgns02ux/out/v1/c0684cc2231e487db3d55259e7c72c9a/index.m3u8?ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D
-#EXTINF:-1 tvg-id="" tvg-name="연합뉴스TV" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KRBD1400001ED_20260422T014054SQUARE.png&h=120" group-title="삼성TV 뉴스",연합뉴스TV
-https://knm-slb-samsung-fastcdn.uplus.co.kr/yna.stream/tsmux.noll_master.m3u8?ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D
-#EXTINF:-1 tvg-id="" tvg-name="KBS 뉴스24" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KR5100001TH_20260901T053911SQUARE.png&h=120" group-title="삼성TV 뉴스",KBS 뉴스24
-https://cc-gkv83mrf5e6z1.akamaized.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-gkv83mrf5e6z1/ZGID/KBS/KBS_News_KR/KBS_News.m3u8?ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KR5100001TH
-#EXTINF:-1 tvg-id="" tvg-name="서울경제TV" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KR7000044K_20260422T014043SQUARE.png&h=120" group-title="삼성TV 뉴스",서울경제TV
-https://d3khn1u90mfw7c.cloudfront.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-muet4ltb2qlh3/sen_playlist.m3u8?ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D
-#EXTINF:-1 tvg-id="" tvg-name="MBN 뉴스" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KRBC4000003J2_20260422T013738SQUARE.png&h=120" group-title="삼성TV 뉴스",MBN 뉴스
-https://ads.its-newid.net/api/manifest.m3u8?tp=samsung_tvplus&channel_name=mbn%EB%89%B4%EC%8A%A4&channel_id=newid_062&apikey=b97c7a7d0c82424bb607e141ef215779&auth=4e059fb2-c679737d-c4fda5a2-1cca694b&ads.live=[CONTENT_LIVE]&ads.device_did=%7BPSID%7D&ads.ifa=[IFA]&ads.ifatype=[IFA_TYPE]&ads.lat=[LMT]&ads.donotsell=[DNS]&ads.ip=[IP]&ads.gdpr=[GDPR]&ads.gdprconsent=[GDPR_CONSENT]&ads.country=[COUNTRY]&ads.us_privacy={US_PRIVACY}&ads.appstoreurl=[APP_STOREURL]&ads.bundleid=[APP_BUNDLE]&ads.app.name={APP_NAME}&ads.appversion=[APP_VERSION]&ads.devicetype=[DEVICE_TYPE]&ads.devicemake=[DEVICE_MAKE]&ads.devicemodel=[DEVICE_MODEL]&ads.targetad=[TARGETAD_ALLOWED]&ads.content_title=[PROGRAM_TITLE]&ads.content_series=[SERIES_TITLE]&ads.content_season=[SEASON_TITLE]&ads.content_episode=[EPISODE_NO]&ads.content_length=[CONTENT_LENGTH]&ads.device.dnt={TARGETOPT}&ads.app_domain={APP_DOMAIN}&nh=true&ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KRBC4000003J2
-#EXTINF:-1 tvg-id="" tvg-name="Bloomberg Originals" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KRBB500044GP_20260422T012617SQUARE.png&h=120" group-title="삼성TV 뉴스",Bloomberg Originals
-https://cc-vciaslqqwvdlr.akamaized.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-vciaslqqwvdlr/qtotttestair1/index.m3u8?ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KRBB500044GP
-#EXTINF:-1 tvg-id="" tvg-name="글로벌 뉴스 by LeadStory" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KRBD3100006X4_20260422T014004SQUARE.png&h=120" group-title="삼성TV 뉴스",글로벌 뉴스 by LeadStory
-https://amg02703-leadstory-leadstoryasia-samsungkr-i5odd.amagi.tv/playlist/amg02703-leadstory-leadstoryasia-samsungkr/playlist.m3u8?ads.did=%7BPSID%7D&ads.dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.coppa=0
-#EXTINF:-1 tvg-id="" tvg-name="tvN 언니네 산지직송 전 시즌 이어보기" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KR700006WZ_20261006T042951SQUARE.png&h=120" group-title="삼성TV 예능",tvN 언니네 산지직송 전 시즌 이어보기
-https://cc-3zgpnedu45hw2.akamaized.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-3zgpnedu45hw2/JCAS/CJENM/KR700006WZ/playlist.m3u8?ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KR700006WZ
-#EXTINF:-1 tvg-id="" tvg-name="채널A 나만 믿고 따라와 도시어부" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KRBC4100001LY_20261006T043043SQUARE.png&h=120" group-title="삼성TV 예능",채널A 나만 믿고 따라와 도시어부
-https://ads.its-newid.net/api/manifest.m3u8?tp=samsung_tvplus&channel_name=%EC%B1%84%EB%84%90a%EB%82%98%EB%A7%8C%EB%AF%BF%EA%B3%A0%EB%94%B0%EB%9D%BC%EC%99%80%EB%8F%84%EC%8B%9C%EC%96%B4%EB%B6%80&channel_id=newid_123&apikey=b97c7a7d0c82424bb607e141ef215779&auth=38aee07a-ad1cb09e-65e01a1c-77afaaa8&ads.live=[CONTENT_LIVE]&ads.device_did=%7BPSID%7D&ads.ifa=[IFA]&ads.ifatype=[IFA_TYPE]&ads.lat=[LMT]&ads.donotsell=[DNS]&ads.ip=[IP]&ads.gdpr=[GDPR]&ads.gdprconsent=[GDPR_CONSENT]&ads.country=[COUNTRY]&ads.us_privacy={US_PRIVACY}&ads.appstoreurl=[APP_STOREURL]&ads.bundleid=[APP_BUNDLE]&ads.app.name={APP_NAME}&ads.appversion=[APP_VERSION]&ads.devicetype=[DEVICE_TYPE]&ads.devicemake=[DEVICE_MAKE]&ads.devicemodel=[DEVICE_MODEL]&ads.targetad=[TARGETAD_ALLOWED]&ads.content_title=[PROGRAM_TITLE]&ads.content_series=[SERIES_TITLE]&ads.content_season=[SEASON_TITLE]&ads.content_episode=[EPISODE_NO]&ads.content_length=[CONTENT_LENGTH]&ads.device.dnt={TARGETOPT}&ads.app_domain={APP_DOMAIN}&nh=true&ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KRBC4100001LY
-#EXTINF:-1 tvg-id="" tvg-name="지구마불 세계여행" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KR400049VH_20261006T043025SQUARE.png&h=120" group-title="삼성TV 예능",지구마불 세계여행
-https://ads.its-newid.net/api/manifest.m3u8?tp=samsung_tvplus&channel_name=%EC%A7%80%EA%B5%AC%EB%A7%88%EB%B6%88%EC%84%B8%EA%B3%84%EC%97%AC%ED%96%89&channel_id=newid_019&apikey=b97c7a7d0c82424bb607e141ef215779&auth=6e773cbd-0e04f433-b1f54a2e-d4b7ee05&ads.live=[CONTENT_LIVE]&ads.device_did=%7BPSID%7D&ads.ifa=[IFA]&ads.ifatype=[IFA_TYPE]&ads.lat=[LMT]&ads.donotsell=[DNS]&ads.ip=[IP]&ads.gdpr=[GDPR]&ads.gdprconsent=[GDPR_CONSENT]&ads.country=[COUNTRY]&ads.us_privacy={US_PRIVACY}&ads.appstoreurl=[APP_STOREURL]&ads.bundleid=[APP_BUNDLE]&ads.app.name={APP_NAME}&ads.appversion=[APP_VERSION]&ads.devicetype=[DEVICE_TYPE]&ads.devicemake=[DEVICE_MAKE]&ads.devicemodel=[DEVICE_MODEL]&ads.targetad=[TARGETAD_ALLOWED]&ads.content_title=[PROGRAM_TITLE]&ads.content_series=[SERIES_TITLE]&ads.content_season=[SEASON_TITLE]&ads.content_episode=[EPISODE_NO]&ads.content_length=[CONTENT_LENGTH]&ads.device.dnt={TARGETOPT}&ads.app_domain={APP_DOMAIN}&nh=true&ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KR400049VH
-#EXTINF:-1 tvg-id="" tvg-name="쯔양" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KR5000002QW_20261006T043032SQUARE.png&h=120" group-title="삼성TV 예능",쯔양
-https://ads.its-newid.net/api/manifest.m3u8?tp=samsung_tvplus&channel_name=%EC%AF%94%EC%96%91&channel_id=newid_060&apikey=b97c7a7d0c82424bb607e141ef215779&auth=bf9530d9-ab9c529b-f1b73c31-712f48ad&ads.live=[CONTENT_LIVE]&ads.device_did=%7BPSID%7D&ads.ifa=[IFA]&ads.ifatype=[IFA_TYPE]&ads.lat=[LMT]&ads.donotsell=[DNS]&ads.ip=[IP]&ads.gdpr=[GDPR]&ads.gdprconsent=[GDPR_CONSENT]&ads.country=[COUNTRY]&ads.us_privacy={US_PRIVACY}&ads.appstoreurl=[APP_STOREURL]&ads.bundleid=[APP_BUNDLE]&ads.app.name={APP_NAME}&ads.appversion=[APP_VERSION]&ads.devicetype=[DEVICE_TYPE]&ads.devicemake=[DEVICE_MAKE]&ads.devicemodel=[DEVICE_MODEL]&ads.targetad=[TARGETAD_ALLOWED]&ads.content_title=[PROGRAM_TITLE]&ads.content_series=[SERIES_TITLE]&ads.content_season=[SEASON_TITLE]&ads.content_episode=[EPISODE_NO]&ads.content_length=[CONTENT_LENGTH]&ads.device.dnt={TARGETOPT}&ads.app_domain={APP_DOMAIN}&nh=true&ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KR5000002QW
-#EXTINF:-1 tvg-id="" tvg-name="tvN 서진이네 1~2 이어보기" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KRBC3200025QG_20261006T042943SQUARE.png&h=120" group-title="삼성TV 예능",tvN 서진이네 1~2 이어보기
-https://cc-a9lfiih8bvwb6.akamaized.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-a9lfiih8bvwb6/JCAS/CJENM/KRBC3200025QG/playlist.m3u8?ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KRBC3200025QG
-#EXTINF:-1 tvg-id="" tvg-name="tvN 삼시세끼 어촌편 5" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KRBC32000156C_20261006T042938SQUARE.png&h=120" group-title="삼성TV 예능",tvN 삼시세끼 어촌편 5
-https://cc-6s1dnzwpptpsj.akamaized.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-6s1dnzwpptpsj/TFJU/CJENM/KRBC32000156C/playlist/KRBC32000156C/playlist.m3u8?ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KRBC32000156C
-#EXTINF:-1 tvg-id="" tvg-name="JTBC 트래블러" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KR40000410_20261006T042837SQUARE.png&h=120" group-title="삼성TV 예능",JTBC 트래블러
-https://ads.its-newid.net/api/manifest.m3u8?tp=samsung_tvplus&channel_name=jtbc%ED%8A%B8%EB%9E%98%EB%B8%94%EB%9F%AC&channel_id=newid_046&apikey=b97c7a7d0c82424bb607e141ef215779&auth=acc4ef5a-54b792dd-c75b1ee3-8e0488eb&ads.live=[CONTENT_LIVE]&ads.device_did=%7BPSID%7D&ads.ifa=[IFA]&ads.ifatype=[IFA_TYPE]&ads.lat=[LMT]&ads.donotsell=[DNS]&ads.ip=[IP]&ads.gdpr=[GDPR]&ads.gdprconsent=[GDPR_CONSENT]&ads.country=[COUNTRY]&ads.us_privacy={US_PRIVACY}&ads.appstoreurl=[APP_STOREURL]&ads.bundleid=[APP_BUNDLE]&ads.app.name={APP_NAME}&ads.appversion=[APP_VERSION]&ads.devicetype=[DEVICE_TYPE]&ads.devicemake=[DEVICE_MAKE]&ads.devicemodel=[DEVICE_MODEL]&ads.targetad=[TARGETAD_ALLOWED]&ads.content_title=[PROGRAM_TITLE]&ads.content_series=[SERIES_TITLE]&ads.content_season=[SEASON_TITLE]&ads.content_episode=[EPISODE_NO]&ads.content_length=[CONTENT_LENGTH]&ads.device.dnt={TARGETOPT}&ads.app_domain={APP_DOMAIN}&nh=true&ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KR40000410
-#EXTINF:-1 tvg-id="" tvg-name="채널십오야" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KRBC3200018FU_20261020T053333SQUARE.png&h=120" group-title="삼성TV 예능",채널십오야
-https://cc-kdsh2j5qh0h9n.akamaized.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-kdsh2j5qh0h9n/AMCJ/CJENM/KRBC3200018FU/playlist.m3u8?ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KRBC3200018FU
-#EXTINF:-1 tvg-id="" tvg-name="tvN 뿅뿅 지구오락실 전 시즌 모아보기" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KRBC3200032ZM_20260623T003301SQUARE.png&h=120" group-title="삼성TV 예능",tvN 뿅뿅 지구오락실 전 시즌 모아보기
-https://cc-89hr2moq31o2e.akamaized.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-89hr2moq31o2e/JCAS/CJENM/KRBC3200032ZM/playlist.m3u8?ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KRBC3200032ZM
-#EXTINF:-1 tvg-id="" tvg-name="빠니보틀" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KR140000508_20261006T043012SQUARE.png&h=120" group-title="삼성TV 예능",빠니보틀
-https://ads.its-newid.net/api/manifest.m3u8?tp=samsung_tvplus&channel_name=%EB%B9%A0%EB%8B%88%EB%B3%B4%ED%8B%80&channel_id=newid_335&apikey=b97c7a7d0c82424bb607e141ef215779&auth=b1fefd1c-7bfcaa53-30a130c9-a14fb065&ads.live=[CONTENT_LIVE]&ads.device_did=%7BPSID%7D&ads.ifa=[IFA]&ads.ifatype=[IFA_TYPE]&ads.lat=[LMT]&ads.donotsell=[DNS]&ads.ip=[IP]&ads.gdpr=[GDPR]&ads.gdprconsent=[GDPR_CONSENT]&ads.country=[COUNTRY]&ads.us_privacy={US_PRIVACY}&ads.appstoreurl=[APP_STOREURL]&ads.bundleid=[APP_BUNDLE]&ads.app.name={APP_NAME}&ads.appversion=[APP_VERSION]&ads.devicetype=[DEVICE_TYPE]&ads.devicemake=[DEVICE_MAKE]&ads.devicemodel=[DEVICE_MODEL]&ads.targetad=[TARGETAD_ALLOWED]&ads.content_title=[PROGRAM_TITLE]&ads.content_series=[SERIES_TITLE]&ads.content_season=[SEASON_TITLE]&ads.content_episode=[EPISODE_NO]&ads.content_length=[CONTENT_LENGTH]&ads.device.dnt={TARGETOPT}&ads.app_domain={APP_DOMAIN}&nh=true&ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KR140000508
-#EXTINF:-1 tvg-id="" tvg-name="KBS 1박2일 시즌1" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KRBC4400003SD_20260422T013634SQUARE.png&h=120" group-title="삼성TV 예능",KBS 1박2일 시즌1
-https://cc-6t71prhkkcyow.akamaized.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-6t71prhkkcyow/kbssmarttv003adv_new/master/playlist.m3u8?ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KRBC4400003SD
-#EXTINF:-1 tvg-id="" tvg-name="조조캠핑" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KR3200005TI_20261006T043021SQUARE.png&h=120" group-title="삼성TV 예능",조조캠핑
-https://ads.its-newid.net/api/manifest.m3u8?tp=samsung_tvplus&channel_name=%EC%A1%B0%EC%A1%B0%EC%BA%A0%ED%95%91&channel_id=newid_388_445a1caa&apikey=b97c7a7d0c82424bb607e141ef215779&auth=eab9522e-68c4841e-b7ae42e3-b2779e28&ads.live=[CONTENT_LIVE]&ads.device_did=%7BPSID%7D&ads.ifa=[IFA]&ads.ifatype=[IFA_TYPE]&ads.lat=[LMT]&ads.donotsell=[DNS]&ads.ip=[IP]&ads.gdpr=[GDPR]&ads.gdprconsent=[GDPR_CONSENT]&ads.country=[COUNTRY]&ads.us_privacy={US_PRIVACY}&ads.appstoreurl=[APP_STOREURL]&ads.bundleid=[APP_BUNDLE]&ads.app.name={APP_NAME}&ads.appversion=[APP_VERSION]&ads.devicetype=[DEVICE_TYPE]&ads.devicemake=[DEVICE_MAKE]&ads.devicemodel=[DEVICE_MODEL]&ads.targetad=[TARGETAD_ALLOWED]&ads.content_title=[PROGRAM_TITLE]&ads.content_series=[SERIES_TITLE]&ads.content_season=[SEASON_TITLE]&ads.content_episode=[EPISODE_NO]&ads.content_length=[CONTENT_LENGTH]&ads.device.dnt={TARGETOPT}&ads.app_domain={APP_DOMAIN}&nh=true&ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KR3200005TI
-#EXTINF:-1 tvg-id="" tvg-name="곽튜브" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KR2200008I8_20260901T054111SQUARE.png&h=120" group-title="삼성TV 예능",곽튜브
-https://ads.its-newid.net/api/manifest.m3u8?tp=samsung_tvplus&channel_name=%EA%B3%BD%ED%8A%9C%EB%B8%8C&channel_id=newid_384&apikey=b97c7a7d0c82424bb607e141ef215779&auth=a249bb97-dfeb460b-08111789-05585c3d&ads.live=[CONTENT_LIVE]&ads.device_did=%7BPSID%7D&ads.ifa=[IFA]&ads.ifatype=[IFA_TYPE]&ads.lat=[LMT]&ads.donotsell=[DNS]&ads.ip=[IP]&ads.gdpr=[GDPR]&ads.gdprconsent=[GDPR_CONSENT]&ads.country=[COUNTRY]&ads.us_privacy={US_PRIVACY}&ads.appstoreurl=[APP_STOREURL]&ads.bundleid=[APP_BUNDLE]&ads.app.name={APP_NAME}&ads.appversion=[APP_VERSION]&ads.devicetype=[DEVICE_TYPE]&ads.devicemake=[DEVICE_MAKE]&ads.devicemodel=[DEVICE_MODEL]&ads.targetad=[TARGETAD_ALLOWED]&ads.content_title=[PROGRAM_TITLE]&ads.content_series=[SERIES_TITLE]&ads.content_season=[SEASON_TITLE]&ads.content_episode=[EPISODE_NO]&ads.content_length=[CONTENT_LENGTH]&ads.device.dnt={TARGETOPT}&ads.app_domain={APP_DOMAIN}&nh=true&ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KR2200008I8
-#EXTINF:-1 tvg-id="" tvg-name="tvN 삼시세끼 고창편" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KRBC3200030BO_20260422T013940SQUARE.png&h=120" group-title="삼성TV 예능",tvN 삼시세끼 고창편
-https://cc-xsspsplqhwfbp.akamaized.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-xsspsplqhwfbp/AMCJ/CJENM/KRBC3200030BO/playlist.m3u8?ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KRBC3200030BO
-#EXTINF:-1 tvg-id="" tvg-name="tvN 신서유기 7~8 이어보기" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KRBC32000248R_20260422T013516SQUARE.png&h=120" group-title="삼성TV 예능",tvN 신서유기 7~8 이어보기
-https://cc-vpy9coqhh217y.akamaized.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-vpy9coqhh217y/TFJU/CJENM/KRBC32000248R/playlist/KRBC32000248R/playlist.m3u8?ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KRBC32000248R
-#EXTINF:-1 tvg-id="" tvg-name="tvN 대탈출 전 시즌" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KRBC800016YS_20260422T013935SQUARE.png&h=120" group-title="삼성TV 예능",tvN 대탈출 전 시즌
-https://cc-dleuxxop58c3x.akamaized.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-dleuxxop58c3x/TFJU/CJENM/KRBC800016YS/playlist/KRBC800016YS/playlist.m3u8?ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KRBC800016YS
-#EXTINF:-1 tvg-id="" tvg-name="맛있는 녀석들" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KRBC3200007D1_20260422T014023SQUARE.png&h=120" group-title="삼성TV 예능",맛있는 녀석들
-https://ads.its-newid.net/api/manifest.m3u8?tp=samsung_tvplus&channel_name=ihq%EB%A7%9B%EC%9E%88%EB%8A%94%EB%85%80%EC%84%9D%EB%93%A4&channel_id=newid_028&apikey=b97c7a7d0c82424bb607e141ef215779&auth=a166d748-5570979a-f6fa4ab3-8fc38dac&ads.live=[CONTENT_LIVE]&ads.device_did=%7BPSID%7D&ads.ifa=[IFA]&ads.ifatype=[IFA_TYPE]&ads.lat=[LMT]&ads.donotsell=[DNS]&ads.ip=[IP]&ads.gdpr=[GDPR]&ads.gdprconsent=[GDPR_CONSENT]&ads.country=[COUNTRY]&ads.us_privacy={US_PRIVACY}&ads.appstoreurl=[APP_STOREURL]&ads.bundleid=[APP_BUNDLE]&ads.app.name={APP_NAME}&ads.appversion=[APP_VERSION]&ads.devicetype=[DEVICE_TYPE]&ads.devicemake=[DEVICE_MAKE]&ads.devicemodel=[DEVICE_MODEL]&ads.targetad=[TARGETAD_ALLOWED]&ads.content_title=[PROGRAM_TITLE]&ads.content_series=[SERIES_TITLE]&ads.content_season=[SEASON_TITLE]&ads.content_episode=[EPISODE_NO]&ads.content_length=[CONTENT_LENGTH]&ads.device.dnt={TARGETOPT}&ads.app_domain={APP_DOMAIN}&nh=true&ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KRBC3200007D1
-#EXTINF:-1 tvg-id="" tvg-name="tvN 식스센스 : 시티투어 1~2 이어보기" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KRBC3200028P2_20260901T054041SQUARE.png&h=120" group-title="삼성TV 예능",tvN 식스센스 : 시티투어 1~2 이어보기
-https://cc-2uk2pfwo4wqaw.akamaized.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-2uk2pfwo4wqaw/JCAS/CJENM/KRBC3200028P2/playlist.m3u8?ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KRBC3200028P2
-#EXTINF:-1 tvg-id="" tvg-name="자취남" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KR16000047N_20260728T033518SQUARE.png&h=120" group-title="삼성TV 예능",자취남
-https://ads.its-newid.net/api/manifest.m3u8?tp=samsung_tvplus&channel_name=%EC%9E%90%EC%B7%A8%EB%82%A8&channel_id=newid_376_445a1caa&apikey=b97c7a7d0c82424bb607e141ef215779&auth=bb4dd05d-b2e25f9e-2091767d-685145a8&ads.live=[CONTENT_LIVE]&ads.device_did=%7BPSID%7D&ads.ifa=[IFA]&ads.ifatype=[IFA_TYPE]&ads.lat=[LMT]&ads.donotsell=[DNS]&ads.ip=[IP]&ads.gdpr=[GDPR]&ads.gdprconsent=[GDPR_CONSENT]&ads.country=[COUNTRY]&ads.us_privacy={US_PRIVACY}&ads.appstoreurl=[APP_STOREURL]&ads.bundleid=[APP_BUNDLE]&ads.app.name={APP_NAME}&ads.appversion=[APP_VERSION]&ads.devicetype=[DEVICE_TYPE]&ads.devicemake=[DEVICE_MAKE]&ads.devicemodel=[DEVICE_MODEL]&ads.targetad=[TARGETAD_ALLOWED]&ads.content_title=[PROGRAM_TITLE]&ads.content_series=[SERIES_TITLE]&ads.content_season=[SEASON_TITLE]&ads.content_episode=[EPISODE_NO]&ads.content_length=[CONTENT_LENGTH]&ads.device.dnt={TARGETOPT}&ads.app_domain={APP_DOMAIN}&nh=true&ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KR16000047N
-#EXTINF:-1 tvg-id="" tvg-name="tvN STORY 이호선 상담소" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KRBD3100002JL_20261006T042927SQUARE.png&h=120" group-title="삼성TV 예능",tvN STORY 이호선 상담소
-https://dbsgrvxg3lb8l.cloudfront.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-48v596hoc5xtl/f6c8175c_eca8_4094_8df9_82ecf707a5aa/hls/playlist.m3u8?ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D?&ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.service_id=KRBD3100002JL
-#EXTINF:-1 tvg-id="" tvg-name="TV조선 미스트롯4" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KRBD2700002IV_20261006T042919SQUARE.png&h=120" group-title="삼성TV 예능",TV조선 미스트롯4
-https://ads.its-newid.net/api/manifest.m3u8?tp=samsung_tvplus&channel_name=tv%EC%A1%B0%EC%84%A0%EB%AF%B8%EC%8A%A4%ED%8A%B8%EB%A1%AF4&channel_id=newid_341&apikey=b97c7a7d0c82424bb607e141ef215779&auth=bd9ccc54-5fb95e1d-3841dc55-850a442b&ads.live=[CONTENT_LIVE]&ads.device_did=%7BPSID%7D&ads.ifa=[IFA]&ads.ifatype=[IFA_TYPE]&ads.lat=[LMT]&ads.donotsell=[DNS]&ads.ip=[IP]&ads.gdpr=[GDPR]&ads.gdprconsent=[GDPR_CONSENT]&ads.country=[COUNTRY]&ads.us_privacy={US_PRIVACY}&ads.appstoreurl=[APP_STOREURL]&ads.bundleid=[APP_BUNDLE]&ads.app.name={APP_NAME}&ads.appversion=[APP_VERSION]&ads.devicetype=[DEVICE_TYPE]&ads.devicemake=[DEVICE_MAKE]&ads.devicemodel=[DEVICE_MODEL]&ads.targetad=[TARGETAD_ALLOWED]&ads.content_title=[PROGRAM_TITLE]&ads.content_series=[SERIES_TITLE]&ads.content_season=[SEASON_TITLE]&ads.content_episode=[EPISODE_NO]&ads.content_length=[CONTENT_LENGTH]&ads.device.dnt={TARGETOPT}&ads.app_domain={APP_DOMAIN}&nh=true&ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KRBD2700002IV
-#EXTINF:-1 tvg-id="" tvg-name="용감한 형사들" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KRBC3500015BN_20260422T014057SQUARE.png&h=120" group-title="삼성TV 예능",용감한 형사들
-https://ads.its-newid.net/api/manifest.m3u8?tp=samsung_tvplus&channel_name=%EC%9A%A9%EA%B0%90%ED%95%9C%ED%98%95%EC%82%AC%EB%93%A4&channel_id=newid_054&apikey=b97c7a7d0c82424bb607e141ef215779&auth=dda4572e-1dd0e20d-2b30c063-c763f83b&ads.live=[CONTENT_LIVE]&ads.device_did=%7BPSID%7D&ads.ifa=[IFA]&ads.ifatype=[IFA_TYPE]&ads.lat=[LMT]&ads.donotsell=[DNS]&ads.ip=[IP]&ads.gdpr=[GDPR]&ads.gdprconsent=[GDPR_CONSENT]&ads.country=[COUNTRY]&ads.us_privacy={US_PRIVACY}&ads.appstoreurl=[APP_STOREURL]&ads.bundleid=[APP_BUNDLE]&ads.app.name={APP_NAME}&ads.appversion=[APP_VERSION]&ads.devicetype=[DEVICE_TYPE]&ads.devicemake=[DEVICE_MAKE]&ads.devicemodel=[DEVICE_MODEL]&ads.targetad=[TARGETAD_ALLOWED]&ads.content_title=[PROGRAM_TITLE]&ads.content_series=[SERIES_TITLE]&ads.content_season=[SEASON_TITLE]&ads.content_episode=[EPISODE_NO]&ads.content_length=[CONTENT_LENGTH]&ads.device.dnt={TARGETOPT}&ads.app_domain={APP_DOMAIN}&nh=true&ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KRBC3500015BN
-#EXTINF:-1 tvg-id="" tvg-name="tvN 스트리트푸드파이터 1~2 이어보기" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KRBC3200029C4_20260728T033454SQUARE.png&h=120" group-title="삼성TV 예능",tvN 스트리트푸드파이터 1~2 이어보기
-https://cc-yrndhd2m66m8q.akamaized.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-yrndhd2m66m8q/16ae5fb5_3043_4e9f_8d68_f360848e1c46/hls/playlist.m3u8?&ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.service_id=KRBC3200029C4
-#EXTINF:-1 tvg-id="" tvg-name="tvN 스트릿 레스토랑 파이터" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KRBC8000128W_20260901T054038SQUARE.png&h=120" group-title="삼성TV 예능",tvN 스트릿 레스토랑 파이터
-https://cc-r5xb2phjzcku4.akamaized.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-r5xb2phjzcku4/TFJU/CJENM/KRBC8000128W/playlist/KRBC8000128W/playlist.m3u8?ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KRBC8000128W
-#EXTINF:-1 tvg-id="" tvg-name="tvN STORY 김창옥쇼 3-4 이어보기" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KRBC320002200_20260728T033444SQUARE.png&h=120" group-title="삼성TV 예능",tvN STORY 김창옥쇼 3-4 이어보기
-https://cc-7fqc1lniljfqo.akamaized.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-7fqc1lniljfqo/TFJU/CJENM/KRBC320002200/playlist/KRBC320002200/playlist.m3u8?ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KRBC320002200
-#EXTINF:-1 tvg-id="" tvg-name="MBC HOT CLIP 예능" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KR4500002GS_20260422T012508SQUARE.png&h=120" group-title="삼성TV 예능",MBC HOT CLIP 예능
-https://cc-8opyre5bdh0rv.akamaized.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-8opyre5bdh0rv/mbcent/master.smil/ts:playlist.m3u8?ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KR4500002GS
-#EXTINF:-1 tvg-id="" tvg-name="KBS 개그콘서트" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KR700003L9_20260728T033403SQUARE.png&h=120" group-title="삼성TV 예능",KBS 개그콘서트
-https://cc-h5wex8n6k77wl.akamaized.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-h5wex8n6k77wl/kbssmarttv005adv_new/master/playlist.m3u8?ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KR700003L9
-#EXTINF:-1 tvg-id="" tvg-name="Mnet 스트릿 월드 파이터: 디렉터스 워" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KRBC8000144F_20261006T042856SQUARE.png&h=120" group-title="삼성TV 예능",Mnet 스트릿 월드 파이터: 디렉터스 워
-https://cc-5oe9bl9b0lu1r.akamaized.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-5oe9bl9b0lu1r/TFJU/CJENM/KRBC8000144F/playlist/KRBC8000144F/playlist.m3u8?ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KRBC8000144F
-#EXTINF:-1 tvg-id="" tvg-name="TV조선 사랑의 콜센타" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KRBD27000069Q_20260812T044724SQUARE.png&h=120" group-title="삼성TV 예능",TV조선 사랑의 콜센타
-https://ads.its-newid.net/api/manifest.m3u8?tp=samsung_tvplus&channel_name=tv%EC%A1%B0%EC%84%A0%EC%82%AC%EB%9E%91%EC%9D%98%EC%BD%9C%EC%84%BC%ED%83%80&channel_id=newid_339&apikey=b97c7a7d0c82424bb607e141ef215779&auth=f90e14a5-ccd36846-8f1e65a3-16607270&ads.live=[CONTENT_LIVE]&ads.device_did=%7BPSID%7D&ads.ifa=[IFA]&ads.ifatype=[IFA_TYPE]&ads.lat=[LMT]&ads.donotsell=[DNS]&ads.ip=[IP]&ads.gdpr=[GDPR]&ads.gdprconsent=[GDPR_CONSENT]&ads.country=[COUNTRY]&ads.us_privacy={US_PRIVACY}&ads.appstoreurl=[APP_STOREURL]&ads.bundleid=[APP_BUNDLE]&ads.app.name={APP_NAME}&ads.appversion=[APP_VERSION]&ads.devicetype=[DEVICE_TYPE]&ads.devicemake=[DEVICE_MAKE]&ads.devicemodel=[DEVICE_MODEL]&ads.targetad=[TARGETAD_ALLOWED]&ads.content_title=[PROGRAM_TITLE]&ads.content_series=[SERIES_TITLE]&ads.content_season=[SEASON_TITLE]&ads.content_episode=[EPISODE_NO]&ads.content_length=[CONTENT_LENGTH]&ads.device.dnt={TARGETOPT}&ads.app_domain={APP_DOMAIN}&nh=true&ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KRBD27000069Q
-#EXTINF:-1 tvg-id="" tvg-name="JTBC 냉장고를 부탁해" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KR400006MW_20260623T003206SQUARE.png&h=120" group-title="삼성TV 예능",JTBC 냉장고를 부탁해
-https://ads.its-newid.net/api/manifest.m3u8?tp=samsung_tvplus&channel_name=%EB%83%89%EC%9E%A5%EA%B3%A0%EB%A5%BC%EB%B6%80%ED%83%81%ED%95%B4&channel_id=newid_047&apikey=b97c7a7d0c82424bb607e141ef215779&auth=39b43bcf-6245022e-3046d10a-b8f61818&ads.live=[CONTENT_LIVE]&ads.device_did=%7BPSID%7D&ads.ifa=[IFA]&ads.ifatype=[IFA_TYPE]&ads.lat=[LMT]&ads.donotsell=[DNS]&ads.ip=[IP]&ads.gdpr=[GDPR]&ads.gdprconsent=[GDPR_CONSENT]&ads.country=[COUNTRY]&ads.us_privacy={US_PRIVACY}&ads.appstoreurl=[APP_STOREURL]&ads.bundleid=[APP_BUNDLE]&ads.app.name={APP_NAME}&ads.appversion=[APP_VERSION]&ads.devicetype=[DEVICE_TYPE]&ads.devicemake=[DEVICE_MAKE]&ads.devicemodel=[DEVICE_MODEL]&ads.targetad=[TARGETAD_ALLOWED]&ads.content_title=[PROGRAM_TITLE]&ads.content_series=[SERIES_TITLE]&ads.content_season=[SEASON_TITLE]&ads.content_episode=[EPISODE_NO]&ads.content_length=[CONTENT_LENGTH]&ads.device.dnt={TARGETOPT}&ads.app_domain={APP_DOMAIN}&nh=true&ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KR400006MW
-#EXTINF:-1 tvg-id="" tvg-name="JTBC 내 친구의 집은 어디인가" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KRBD5200001G8_20261006T042823SQUARE.png&h=120" group-title="삼성TV 예능",JTBC 내 친구의 집은 어디인가
-https://ads.its-newid.net/api/manifest.m3u8?tp=samsung_tvplus&channel_name=jtbc%EB%82%B4%EC%B9%9C%EA%B5%AC%EC%9D%98%EC%A7%91%EC%9D%80%EC%96%B4%EB%94%94%EC%9D%B8%EA%B0%80&channel_id=newid_017&apikey=b97c7a7d0c82424bb607e141ef215779&auth=d7177a6f-d4ce17c0-3b0086d7-0e7d0df6&ads.live=[CONTENT_LIVE]&ads.device_did=%7BPSID%7D&ads.ifa=[IFA]&ads.ifatype=[IFA_TYPE]&ads.lat=[LMT]&ads.donotsell=[DNS]&ads.ip=[IP]&ads.gdpr=[GDPR]&ads.gdprconsent=[GDPR_CONSENT]&ads.country=[COUNTRY]&ads.us_privacy={US_PRIVACY}&ads.appstoreurl=[APP_STOREURL]&ads.bundleid=[APP_BUNDLE]&ads.app.name={APP_NAME}&ads.appversion=[APP_VERSION]&ads.devicetype=[DEVICE_TYPE]&ads.devicemake=[DEVICE_MAKE]&ads.devicemodel=[DEVICE_MODEL]&ads.targetad=[TARGETAD_ALLOWED]&ads.content_title=[PROGRAM_TITLE]&ads.content_series=[SERIES_TITLE]&ads.content_season=[SEASON_TITLE]&ads.content_episode=[EPISODE_NO]&ads.content_length=[CONTENT_LENGTH]&ads.device.dnt={TARGETOPT}&ads.app_domain={APP_DOMAIN}&nh=true&ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KRBD5200001G8
-#EXTINF:-1 tvg-id="" tvg-name="tvN 놀라운 토요일 하이라이트" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KRBC32000261J_20260422T013933SQUARE.png&h=120" group-title="삼성TV 예능",tvN 놀라운 토요일 하이라이트
-https://d21dxaer0ypwk1.cloudfront.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-a6m2cy2rylsvo-ssai-prd/54ac8e25_eb5a_4f10_ba20_ffb254f0a16c/hls/playlist.m3u8?&ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.service_id=KRBC32000261J
-#EXTINF:-1 tvg-id="" tvg-name="KBS HOT CLIP 예능" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KR45000060I_20260422T012520SQUARE.png&h=120" group-title="삼성TV 예능",KBS HOT CLIP 예능
-https://cc-clkvi3vyxm33h.akamaized.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-clkvi3vyxm33h/kbsent/master.smil/ts:playlist.m3u8?ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KR45000060I
-#EXTINF:-1 tvg-id="" tvg-name="KBS Joy 연애의 참견" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KRBC4000005EP_20260422T013639SQUARE.png&h=120" group-title="삼성TV 예능",KBS Joy 연애의 참견
-https://ads.its-newid.net/api/manifest.m3u8?tp=samsung_tvplus&channel_name=kbsjoy%EC%97%B0%EC%95%A0%EC%9D%98%EC%B0%B8%EA%B2%AC&channel_id=newid_064&apikey=b97c7a7d0c82424bb607e141ef215779&auth=87c5684e-70561157-9b220f17-aae50b61&ads.live=[CONTENT_LIVE]&ads.device_did=%7BPSID%7D&ads.ifa=[IFA]&ads.ifatype=[IFA_TYPE]&ads.lat=[LMT]&ads.donotsell=[DNS]&ads.ip=[IP]&ads.gdpr=[GDPR]&ads.gdprconsent=[GDPR_CONSENT]&ads.country=[COUNTRY]&ads.us_privacy={US_PRIVACY}&ads.appstoreurl=[APP_STOREURL]&ads.bundleid=[APP_BUNDLE]&ads.app.name={APP_NAME}&ads.appversion=[APP_VERSION]&ads.devicetype=[DEVICE_TYPE]&ads.devicemake=[DEVICE_MAKE]&ads.devicemodel=[DEVICE_MODEL]&ads.targetad=[TARGETAD_ALLOWED]&ads.content_title=[PROGRAM_TITLE]&ads.content_series=[SERIES_TITLE]&ads.content_season=[SEASON_TITLE]&ads.content_episode=[EPISODE_NO]&ads.content_length=[CONTENT_LENGTH]&ads.device.dnt={TARGETOPT}&ads.app_domain={APP_DOMAIN}&nh=true&ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KRBC4000005EP
-#EXTINF:-1 tvg-id="" tvg-name="MBC every1 어서와 한국은 처음이지?" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KRBB500034DY_20260422T013657SQUARE.png&h=120" group-title="삼성TV 예능",MBC every1 어서와 한국은 처음이지?
-https://ads.its-newid.net/api/manifest.m3u8?tp=samsung_tvplus&channel_name=mbcevery1%EC%96%B4%EC%84%9C%EC%99%80%ED%95%9C%EA%B5%AD%EC%9D%80%EC%B2%98%EC%9D%8C%EC%9D%B4%EC%A7%80&channel_id=newid_051&apikey=b97c7a7d0c82424bb607e141ef215779&auth=7084db2c-f0e83132-b6b83cac-2a5b2b04&ads.live=[CONTENT_LIVE]&ads.device_did=%7BPSID%7D&ads.ifa=[IFA]&ads.ifatype=[IFA_TYPE]&ads.lat=[LMT]&ads.donotsell=[DNS]&ads.ip=[IP]&ads.gdpr=[GDPR]&ads.gdprconsent=[GDPR_CONSENT]&ads.country=[COUNTRY]&ads.us_privacy={US_PRIVACY}&ads.appstoreurl=[APP_STOREURL]&ads.bundleid=[APP_BUNDLE]&ads.app.name={APP_NAME}&ads.appversion=[APP_VERSION]&ads.devicetype=[DEVICE_TYPE]&ads.devicemake=[DEVICE_MAKE]&ads.devicemodel=[DEVICE_MODEL]&ads.targetad=[TARGETAD_ALLOWED]&ads.content_title=[PROGRAM_TITLE]&ads.content_series=[SERIES_TITLE]&ads.content_season=[SEASON_TITLE]&ads.content_episode=[EPISODE_NO]&ads.content_length=[CONTENT_LENGTH]&ads.device.dnt={TARGETOPT}&ads.app_domain={APP_DOMAIN}&nh=true&ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KRBB500034DY
-#EXTINF:-1 tvg-id="" tvg-name="TV CHOSUN 식객 허영만의 백반기행" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KRBC3200008M6_20260422T013900SQUARE.png&h=120" group-title="삼성TV 예능",TV CHOSUN 식객 허영만의 백반기행
-https://ads.its-newid.net/api/manifest.m3u8?tp=samsung_tvplus&channel_name=tvchosun%EC%8B%9D%EA%B0%9D%ED%97%88%EC%98%81%EB%A7%8C%EC%9D%98%EB%B0%B1%EB%B0%98%EA%B8%B0%ED%96%89&channel_id=newid_029&apikey=b97c7a7d0c82424bb607e141ef215779&auth=341603dd-63820769-01e7855a-b9311d5f&ads.live=[CONTENT_LIVE]&ads.device_did=%7BPSID%7D&ads.ifa=[IFA]&ads.ifatype=[IFA_TYPE]&ads.lat=[LMT]&ads.donotsell=[DNS]&ads.ip=[IP]&ads.gdpr=[GDPR]&ads.gdprconsent=[GDPR_CONSENT]&ads.country=[COUNTRY]&ads.us_privacy={US_PRIVACY}&ads.appstoreurl=[APP_STOREURL]&ads.bundleid=[APP_BUNDLE]&ads.app.name={APP_NAME}&ads.appversion=[APP_VERSION]&ads.devicetype=[DEVICE_TYPE]&ads.devicemake=[DEVICE_MAKE]&ads.devicemodel=[DEVICE_MODEL]&ads.targetad=[TARGETAD_ALLOWED]&ads.content_title=[PROGRAM_TITLE]&ads.content_series=[SERIES_TITLE]&ads.content_season=[SEASON_TITLE]&ads.content_episode=[EPISODE_NO]&ads.content_length=[CONTENT_LENGTH]&ads.device.dnt={TARGETOPT}&ads.app_domain={APP_DOMAIN}&nh=true&ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KRBC3200008M6
-#EXTINF:-1 tvg-id="" tvg-name="유병재" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KR1400009B8_20260610T004239SQUARE.png&h=120" group-title="삼성TV 예능",유병재
-https://ads.its-newid.net/api/manifest.m3u8?tp=samsung_tvplus&channel_name=%EC%9C%A0%EB%B3%91%EC%9E%AC&channel_id=newid_310_445a1caa&apikey=b97c7a7d0c82424bb607e141ef215779&auth=c64f5961-dfc0db00-c41a4461-0573c136&ads.live=[CONTENT_LIVE]&ads.device_did=%7BPSID%7D&ads.ifa=[IFA]&ads.ifatype=[IFA_TYPE]&ads.lat=[LMT]&ads.donotsell=[DNS]&ads.ip=[IP]&ads.gdpr=[GDPR]&ads.gdprconsent=[GDPR_CONSENT]&ads.country=[COUNTRY]&ads.us_privacy={US_PRIVACY}&ads.appstoreurl=[APP_STOREURL]&ads.bundleid=[APP_BUNDLE]&ads.app.name={APP_NAME}&ads.appversion=[APP_VERSION]&ads.devicetype=[DEVICE_TYPE]&ads.devicemake=[DEVICE_MAKE]&ads.devicemodel=[DEVICE_MODEL]&ads.targetad=[TARGETAD_ALLOWED]&ads.content_title=[PROGRAM_TITLE]&ads.content_series=[SERIES_TITLE]&ads.content_season=[SEASON_TITLE]&ads.content_episode=[EPISODE_NO]&ads.content_length=[CONTENT_LENGTH]&ads.device.dnt={TARGETOPT}&ads.app_domain={APP_DOMAIN}&nh=true&ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KR1400009B8
-#EXTINF:-1 tvg-id="" tvg-name="비보티비" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KR1800002Q7_20260812T044634SQUARE.png&h=120" group-title="삼성TV 예능",비보티비
-https://ads.its-newid.net/api/manifest.m3u8?tp=samsung_tvplus&channel_name=%EB%B9%84%EB%B3%B4%ED%8B%B0%EB%B9%84&channel_id=newid_349&apikey=b97c7a7d0c82424bb607e141ef215779&auth=cd3c7d7a-335cdfc4-ed6bba19-e9efc5f2&ads.live=[CONTENT_LIVE]&ads.device_did=%7BPSID%7D&ads.ifa=[IFA]&ads.ifatype=[IFA_TYPE]&ads.lat=[LMT]&ads.donotsell=[DNS]&ads.ip=[IP]&ads.gdpr=[GDPR]&ads.gdprconsent=[GDPR_CONSENT]&ads.country=[COUNTRY]&ads.us_privacy={US_PRIVACY}&ads.appstoreurl=[APP_STOREURL]&ads.bundleid=[APP_BUNDLE]&ads.app.name={APP_NAME}&ads.appversion=[APP_VERSION]&ads.devicetype=[DEVICE_TYPE]&ads.devicemake=[DEVICE_MAKE]&ads.devicemodel=[DEVICE_MODEL]&ads.targetad=[TARGETAD_ALLOWED]&ads.content_title=[PROGRAM_TITLE]&ads.content_series=[SERIES_TITLE]&ads.content_season=[SEASON_TITLE]&ads.content_episode=[EPISODE_NO]&ads.content_length=[CONTENT_LENGTH]&ads.device.dnt={TARGETOPT}&ads.app_domain={APP_DOMAIN}&nh=true&ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KR1800002Q7
-#EXTINF:-1 tvg-id="" tvg-name="JTBC 한끼줍쇼" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KR400005KB_20261006T042842SQUARE.png&h=120" group-title="삼성TV 예능",JTBC 한끼줍쇼
-https://ads.its-newid.net/api/manifest.m3u8?tp=samsung_tvplus&channel_name=jtbc%ED%95%9C%EB%81%BC%EC%A4%8D%EC%87%BC&channel_id=newid_010&apikey=b97c7a7d0c82424bb607e141ef215779&auth=8ba75906-5413e519-93c2e38b-8ea0ff2f&ads.live=[CONTENT_LIVE]&ads.device_did=%7BPSID%7D&ads.ifa=[IFA]&ads.ifatype=[IFA_TYPE]&ads.lat=[LMT]&ads.donotsell=[DNS]&ads.ip=[IP]&ads.gdpr=[GDPR]&ads.gdprconsent=[GDPR_CONSENT]&ads.country=[COUNTRY]&ads.us_privacy={US_PRIVACY}&ads.appstoreurl=[APP_STOREURL]&ads.bundleid=[APP_BUNDLE]&ads.app.name={APP_NAME}&ads.appversion=[APP_VERSION]&ads.devicetype=[DEVICE_TYPE]&ads.devicemake=[DEVICE_MAKE]&ads.devicemodel=[DEVICE_MODEL]&ads.targetad=[TARGETAD_ALLOWED]&ads.content_title=[PROGRAM_TITLE]&ads.content_series=[SERIES_TITLE]&ads.content_season=[SEASON_TITLE]&ads.content_episode=[EPISODE_NO]&ads.content_length=[CONTENT_LENGTH]&ads.device.dnt={TARGETOPT}&ads.app_domain={APP_DOMAIN}&nh=true&ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KR400005KB
-#EXTINF:-1 tvg-id="" tvg-name="iHQ 돈쭐내러 왔습니다" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KRBC4000002ME_20260422T013925SQUARE.png&h=120" group-title="삼성TV 예능",iHQ 돈쭐내러 왔습니다
-https://ads.its-newid.net/api/manifest.m3u8?tp=samsung_tvplus&channel_name=ihq%EB%8F%88%EC%AD%90%EB%82%B4%EB%9F%AC%EC%99%94%EC%8A%B5%EB%8B%88%EB%8B%A4&channel_id=newid_066&apikey=b97c7a7d0c82424bb607e141ef215779&auth=7655c725-1db330b1-ae689684-c7002a87&ads.live=[CONTENT_LIVE]&ads.device_did=%7BPSID%7D&ads.ifa=[IFA]&ads.ifatype=[IFA_TYPE]&ads.lat=[LMT]&ads.donotsell=[DNS]&ads.ip=[IP]&ads.gdpr=[GDPR]&ads.gdprconsent=[GDPR_CONSENT]&ads.country=[COUNTRY]&ads.us_privacy={US_PRIVACY}&ads.appstoreurl=[APP_STOREURL]&ads.bundleid=[APP_BUNDLE]&ads.app.name={APP_NAME}&ads.appversion=[APP_VERSION]&ads.devicetype=[DEVICE_TYPE]&ads.devicemake=[DEVICE_MAKE]&ads.devicemodel=[DEVICE_MODEL]&ads.targetad=[TARGETAD_ALLOWED]&ads.content_title=[PROGRAM_TITLE]&ads.content_series=[SERIES_TITLE]&ads.content_season=[SEASON_TITLE]&ads.content_episode=[EPISODE_NO]&ads.content_length=[CONTENT_LENGTH]&ads.device.dnt={TARGETOPT}&ads.app_domain={APP_DOMAIN}&nh=true&ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KRBC4000002ME
-#EXTINF:-1 tvg-id="" tvg-name="채널A 이제 만나러 갑니다" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KRBC4100005N5_20260422T014105SQUARE.png&h=120" group-title="삼성TV 예능",채널A 이제 만나러 갑니다
-https://ads.its-newid.net/api/manifest.m3u8?tp=samsung_tvplus&channel_name=%EC%B1%84%EB%84%90a%EC%9D%B4%EC%A0%9C%EB%A7%8C%EB%82%98%EB%9F%AC%EA%B0%91%EB%8B%88%EB%8B%A4&channel_id=newid_071&apikey=b97c7a7d0c82424bb607e141ef215779&auth=aa15f353-b9ec935e-df8bb4cb-635f8968&ads.live=[CONTENT_LIVE]&ads.device_did=%7BPSID%7D&ads.ifa=[IFA]&ads.ifatype=[IFA_TYPE]&ads.lat=[LMT]&ads.donotsell=[DNS]&ads.ip=[IP]&ads.gdpr=[GDPR]&ads.gdprconsent=[GDPR_CONSENT]&ads.country=[COUNTRY]&ads.us_privacy={US_PRIVACY}&ads.appstoreurl=[APP_STOREURL]&ads.bundleid=[APP_BUNDLE]&ads.app.name={APP_NAME}&ads.appversion=[APP_VERSION]&ads.devicetype=[DEVICE_TYPE]&ads.devicemake=[DEVICE_MAKE]&ads.devicemodel=[DEVICE_MODEL]&ads.targetad=[TARGETAD_ALLOWED]&ads.content_title=[PROGRAM_TITLE]&ads.content_series=[SERIES_TITLE]&ads.content_season=[SEASON_TITLE]&ads.content_episode=[EPISODE_NO]&ads.content_length=[CONTENT_LENGTH]&ads.device.dnt={TARGETOPT}&ads.app_domain={APP_DOMAIN}&nh=true&ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KRBC4100005N5
-#EXTINF:-1 tvg-id="" tvg-name="바오패밀리" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KR2900001RN_20260812T044630SQUARE.png&h=120" group-title="삼성TV 예능",바오패밀리
-https://ads.its-newid.net/api/manifest.m3u8?tp=samsung_tvplus&channel_name=%EB%B0%94%EC%98%A4%ED%8C%A8%EB%B0%80%EB%A6%AC&channel_id=newid_249&apikey=b97c7a7d0c82424bb607e141ef215779&auth=40b48098-fcc2c80c-690cda80-2671d23a&ads.live=[CONTENT_LIVE]&ads.device_did=%7BPSID%7D&ads.ifa=[IFA]&ads.ifatype=[IFA_TYPE]&ads.lat=[LMT]&ads.donotsell=[DNS]&ads.ip=[IP]&ads.gdpr=[GDPR]&ads.gdprconsent=[GDPR_CONSENT]&ads.country=[COUNTRY]&ads.us_privacy={US_PRIVACY}&ads.appstoreurl=[APP_STOREURL]&ads.bundleid=[APP_BUNDLE]&ads.app.name={APP_NAME}&ads.appversion=[APP_VERSION]&ads.devicetype=[DEVICE_TYPE]&ads.devicemake=[DEVICE_MAKE]&ads.devicemodel=[DEVICE_MODEL]&ads.targetad=[TARGETAD_ALLOWED]&ads.content_title=[PROGRAM_TITLE]&ads.content_series=[SERIES_TITLE]&ads.content_season=[SEASON_TITLE]&ads.content_episode=[EPISODE_NO]&ads.content_length=[CONTENT_LENGTH]&ads.device.dnt={TARGETOPT}&ads.app_domain={APP_DOMAIN}&nh=true&ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KR2900001RN
-#EXTINF:-1 tvg-id="" tvg-name="MBN 속풀이쇼 동치미" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KRBC3500019CD_20260422T013740SQUARE.png&h=120" group-title="삼성TV 예능",MBN 속풀이쇼 동치미
-https://ads.its-newid.net/api/manifest.m3u8?tp=samsung_tvplus&channel_name=mbn%EC%86%8D%ED%92%80%EC%9D%B4%EC%87%BC%EB%8F%99%EC%B9%98%EB%AF%B8&channel_id=newid_058&apikey=b97c7a7d0c82424bb607e141ef215779&auth=9554be97-aaff2018-948f9509-704c3a2e&ads.live=[CONTENT_LIVE]&ads.device_did=%7BPSID%7D&ads.ifa=[IFA]&ads.ifatype=[IFA_TYPE]&ads.lat=[LMT]&ads.donotsell=[DNS]&ads.ip=[IP]&ads.gdpr=[GDPR]&ads.gdprconsent=[GDPR_CONSENT]&ads.country=[COUNTRY]&ads.us_privacy={US_PRIVACY}&ads.appstoreurl=[APP_STOREURL]&ads.bundleid=[APP_BUNDLE]&ads.app.name={APP_NAME}&ads.appversion=[APP_VERSION]&ads.devicetype=[DEVICE_TYPE]&ads.devicemake=[DEVICE_MAKE]&ads.devicemodel=[DEVICE_MODEL]&ads.targetad=[TARGETAD_ALLOWED]&ads.content_title=[PROGRAM_TITLE]&ads.content_series=[SERIES_TITLE]&ads.content_season=[SEASON_TITLE]&ads.content_episode=[EPISODE_NO]&ads.content_length=[CONTENT_LENGTH]&ads.device.dnt={TARGETOPT}&ads.app_domain={APP_DOMAIN}&nh=true&ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KRBC3500019CD
-#EXTINF:-1 tvg-id="" tvg-name="E채널 토요일은 밥이 좋아" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KRBC4100008Z6_20260422T013531SQUARE.png&h=120" group-title="삼성TV 예능",E채널 토요일은 밥이 좋아
-https://ads.its-newid.net/api/manifest.m3u8?tp=samsung_tvplus&channel_name=e%EC%B1%84%EB%84%90%ED%86%A0%EC%9A%94%EC%9D%BC%EC%9D%80%EB%B0%A5%EC%9D%B4%EC%A2%8B%EC%95%84&channel_id=newid_074&apikey=b97c7a7d0c82424bb607e141ef215779&auth=07357f51-54d44061-42034804-8e675a57&ads.live=[CONTENT_LIVE]&ads.device_did=%7BPSID%7D&ads.ifa=[IFA]&ads.ifatype=[IFA_TYPE]&ads.lat=[LMT]&ads.donotsell=[DNS]&ads.ip=[IP]&ads.gdpr=[GDPR]&ads.gdprconsent=[GDPR_CONSENT]&ads.country=[COUNTRY]&ads.us_privacy={US_PRIVACY}&ads.appstoreurl=[APP_STOREURL]&ads.bundleid=[APP_BUNDLE]&ads.app.name={APP_NAME}&ads.appversion=[APP_VERSION]&ads.devicetype=[DEVICE_TYPE]&ads.devicemake=[DEVICE_MAKE]&ads.devicemodel=[DEVICE_MODEL]&ads.targetad=[TARGETAD_ALLOWED]&ads.content_title=[PROGRAM_TITLE]&ads.content_series=[SERIES_TITLE]&ads.content_season=[SEASON_TITLE]&ads.content_episode=[EPISODE_NO]&ads.content_length=[CONTENT_LENGTH]&ads.device.dnt={TARGETOPT}&ads.app_domain={APP_DOMAIN}&nh=true&ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KRBC4100008Z6
-#EXTINF:-1 tvg-id="" tvg-name="살롱드립" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KR4100001LW_20260812T044647SQUARE.png&h=120" group-title="삼성TV 예능",살롱드립
-https://ads.its-newid.net/api/manifest.m3u8?tp=samsung_tvplus&channel_name=%EC%82%B4%EB%A1%B1%EB%93%9C%EB%A6%BD&channel_id=newid_264&apikey=b97c7a7d0c82424bb607e141ef215779&auth=47a595cb-341b3886-489dc864-eea822b0&ads.live=[CONTENT_LIVE]&ads.device_did=%7BPSID%7D&ads.ifa=[IFA]&ads.ifatype=[IFA_TYPE]&ads.lat=[LMT]&ads.donotsell=[DNS]&ads.ip=[IP]&ads.gdpr=[GDPR]&ads.gdprconsent=[GDPR_CONSENT]&ads.country=[COUNTRY]&ads.us_privacy={US_PRIVACY}&ads.appstoreurl=[APP_STOREURL]&ads.bundleid=[APP_BUNDLE]&ads.app.name={APP_NAME}&ads.appversion=[APP_VERSION]&ads.devicetype=[DEVICE_TYPE]&ads.devicemake=[DEVICE_MAKE]&ads.devicemodel=[DEVICE_MODEL]&ads.targetad=[TARGETAD_ALLOWED]&ads.content_title=[PROGRAM_TITLE]&ads.content_series=[SERIES_TITLE]&ads.content_season=[SEASON_TITLE]&ads.content_episode=[EPISODE_NO]&ads.content_length=[CONTENT_LENGTH]&ads.device.dnt={TARGETOPT}&ads.app_domain={APP_DOMAIN}&nh=true&ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KR4100001LW
-#EXTINF:-1 tvg-id="" tvg-name="KBS Joy 무엇이든 물어보살" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KRBC3200009M7_20260422T013637SQUARE.png&h=120" group-title="삼성TV 예능",KBS Joy 무엇이든 물어보살
-https://ads.its-newid.net/api/manifest.m3u8?tp=samsung_tvplus&channel_name=kbsjoy%EB%AC%B4%EC%97%87%EC%9D%B4%EB%93%A0%EB%AC%BC%EC%96%B4%EB%B3%B4%EC%82%B4&channel_id=newid_023&apikey=b97c7a7d0c82424bb607e141ef215779&auth=b5261d98-6282a756-e1877a85-b831bd60&ads.live=[CONTENT_LIVE]&ads.device_did=%7BPSID%7D&ads.ifa=[IFA]&ads.ifatype=[IFA_TYPE]&ads.lat=[LMT]&ads.donotsell=[DNS]&ads.ip=[IP]&ads.gdpr=[GDPR]&ads.gdprconsent=[GDPR_CONSENT]&ads.country=[COUNTRY]&ads.us_privacy={US_PRIVACY}&ads.appstoreurl=[APP_STOREURL]&ads.bundleid=[APP_BUNDLE]&ads.app.name={APP_NAME}&ads.appversion=[APP_VERSION]&ads.devicetype=[DEVICE_TYPE]&ads.devicemake=[DEVICE_MAKE]&ads.devicemodel=[DEVICE_MODEL]&ads.targetad=[TARGETAD_ALLOWED]&ads.content_title=[PROGRAM_TITLE]&ads.content_series=[SERIES_TITLE]&ads.content_season=[SEASON_TITLE]&ads.content_episode=[EPISODE_NO]&ads.content_length=[CONTENT_LENGTH]&ads.device.dnt={TARGETOPT}&ads.app_domain={APP_DOMAIN}&nh=true&ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KRBC3200009M7
-#EXTINF:-1 tvg-id="" tvg-name="TV조선 생존왕" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KRBD2700001QR_20260812T044619SQUARE.png&h=120" group-title="삼성TV 예능",TV조선 생존왕
-https://ads.its-newid.net/api/manifest.m3u8?tp=samsung_tvplus&channel_name=tv%EC%A1%B0%EC%84%A0%EC%83%9D%EC%A1%B4%EC%99%95&channel_id=newid_340&apikey=b97c7a7d0c82424bb607e141ef215779&auth=28ec18c1-694bceee-cf5c13bc-b3f8d4d8&ads.live=[CONTENT_LIVE]&ads.device_did=%7BPSID%7D&ads.ifa=[IFA]&ads.ifatype=[IFA_TYPE]&ads.lat=[LMT]&ads.donotsell=[DNS]&ads.ip=[IP]&ads.gdpr=[GDPR]&ads.gdprconsent=[GDPR_CONSENT]&ads.country=[COUNTRY]&ads.us_privacy={US_PRIVACY}&ads.appstoreurl=[APP_STOREURL]&ads.bundleid=[APP_BUNDLE]&ads.app.name={APP_NAME}&ads.appversion=[APP_VERSION]&ads.devicetype=[DEVICE_TYPE]&ads.devicemake=[DEVICE_MAKE]&ads.devicemodel=[DEVICE_MODEL]&ads.targetad=[TARGETAD_ALLOWED]&ads.content_title=[PROGRAM_TITLE]&ads.content_series=[SERIES_TITLE]&ads.content_season=[SEASON_TITLE]&ads.content_episode=[EPISODE_NO]&ads.content_length=[CONTENT_LENGTH]&ads.device.dnt={TARGETOPT}&ads.app_domain={APP_DOMAIN}&nh=true&ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KRBD2700001QR
-#EXTINF:-1 tvg-id="" tvg-name="tvN STORY" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KRBC3200014XZ_20260422T013931SQUARE.png&h=120" group-title="삼성TV 예능",tvN STORY
-https://d2zyqoz1zsj2mq.cloudfront.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-i9yul1lyegl6e-ssai-prd/6d07fe2a_003a_4879_acfc_44e3c3c10f03/hls/playlist.m3u8?&ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.service_id=KRBC3200014XZ
-#EXTINF:-1 tvg-id="" tvg-name="SBS HOT CLIP 예능" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KR4500004XC_20260422T012514SQUARE.png&h=120" group-title="삼성TV 예능",SBS HOT CLIP 예능
-https://cc-27uo6qh088v11.akamaized.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-27uo6qh088v11/sbsent/master.smil/ts:playlist.m3u8?ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KR4500004XC
-#EXTINF:-1 tvg-id="" tvg-name="Mr. Bean" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KR2400001TI_20260422T013746SQUARE.png&h=120" group-title="삼성TV 예능",Mr. Bean
-https://amg00627-amg00627c27-samsung-au-3944.playouts.now.amagi.tv/playlist/amg00627-banijayfast-mrbeanko-samsungau/playlist.m3u8?ads.did=%7BPSID%7D&ads.dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.coppa=1
-#EXTINF:-1 tvg-id="" tvg-name="코난 오브라이언 쇼" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KR3200003RR_20260422T014111SQUARE.png&h=120" group-title="삼성TV 예능",코난 오브라이언 쇼
-https://cc-920m91ievvt11.akamaized.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-920m91ievvt11/SDQS/Amagi/Conan_KR/Conan_KR.m3u8?ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KR3200003RR
-#EXTINF:-1 tvg-id="" tvg-name="JTBC 무자식 상팔자" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KR400003IP_20261006T042828SQUARE.png&h=120" group-title="삼성TV 드라마",JTBC 무자식 상팔자
-https://ads.its-newid.net/api/manifest.m3u8?tp=samsung_tvplus&channel_name=%EC%9E%AC%EB%B2%8C%EC%A7%91%EB%A7%89%EB%82%B4%EC%95%84%EB%93%A4&channel_id=newid_032&apikey=b97c7a7d0c82424bb607e141ef215779&auth=a0a6de12-70f26693-cfbbf27f-aa417ca5&ads.live=[CONTENT_LIVE]&ads.device_did=%7BPSID%7D&ads.ifa=[IFA]&ads.ifatype=[IFA_TYPE]&ads.lat=[LMT]&ads.donotsell=[DNS]&ads.ip=[IP]&ads.gdpr=[GDPR]&ads.gdprconsent=[GDPR_CONSENT]&ads.country=[COUNTRY]&ads.us_privacy={US_PRIVACY}&ads.appstoreurl=[APP_STOREURL]&ads.bundleid=[APP_BUNDLE]&ads.app.name={APP_NAME}&ads.appversion=[APP_VERSION]&ads.devicetype=[DEVICE_TYPE]&ads.devicemake=[DEVICE_MAKE]&ads.devicemodel=[DEVICE_MODEL]&ads.targetad=[TARGETAD_ALLOWED]&ads.content_title=[PROGRAM_TITLE]&ads.content_series=[SERIES_TITLE]&ads.content_season=[SEASON_TITLE]&ads.content_episode=[EPISODE_NO]&ads.content_length=[CONTENT_LENGTH]&ads.device.dnt={TARGETOPT}&ads.app_domain={APP_DOMAIN}&nh=true&ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KR400003IP
-#EXTINF:-1 tvg-id="" tvg-name="tvN 언젠가는 슬기로울 전공의생활" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KRBC3200016H1_20261006T042954SQUARE.png&h=120" group-title="삼성TV 드라마",tvN 언젠가는 슬기로울 전공의생활
-https://cc-i7i071jpk29wv.akamaized.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-i7i071jpk29wv/TFJU/CJENM/KRBC3200016H1/playlist/KRBC3200016H1/playlist.m3u8?ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KRBC3200016H1
-#EXTINF:-1 tvg-id="" tvg-name="tvN 응답하라 전 시즌 모아보기" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KRBC3200013UR_20261006T042957SQUARE.png&h=120" group-title="삼성TV 드라마",tvN 응답하라 전 시즌 모아보기
-https://cc-dkq8y312sckj2.akamaized.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-dkq8y312sckj2/AMCJ/CJENM/KRBC3200013UR/playlist.m3u8?ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KRBC3200013UR
-#EXTINF:-1 tvg-id="" tvg-name="tvN 폭군의 셰프" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KRBC4500002Q4_20261020T053336SQUARE.png&h=120" group-title="삼성TV 드라마",tvN 폭군의 셰프
-https://cc-t760tuubm5zcm.akamaized.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-t760tuubm5zcm/TFJU/CJENM/KRBC4500002Q4/playlist/KRBC4500002Q4/playlist.m3u8?ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KRBC4500002Q4
-#EXTINF:-1 tvg-id="" tvg-name="tvN 슬기로운 의사생활 1~2 이어보기" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KRBC4500003W6_20260422T013943SQUARE.png&h=120" group-title="삼성TV 드라마",tvN 슬기로운 의사생활 1~2 이어보기
-https://cc-91iwp4l4a8qj3.akamaized.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-91iwp4l4a8qj3/TFJU/CJENM/KRBC4500003W6/playlist/KRBC4500003W6/playlist.m3u8?ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KRBC4500003W6
-#EXTINF:-1 tvg-id="" tvg-name="KBS 오월의 청춘" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KR7000023Z_20261006T042846SQUARE.png&h=120" group-title="삼성TV 드라마",KBS 오월의 청춘
-https://cc-cda5phqllafir.akamaized.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-cda5phqllafir/kbssmarttv004adv_new/master/playlist.m3u8?ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KR7000023Z
-#EXTINF:-1 tvg-id="" tvg-name="KBS 최고다 이순신" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KRBC4400002AO_20260506T053640SQUARE.png&h=120" group-title="삼성TV 드라마",KBS 최고다 이순신
-https://cc-1si06izt21fag.akamaized.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-1si06izt21fag/kbssmarttv002adv_new/master/playlist.m3u8?ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KRBC4400002AO
-#EXTINF:-1 tvg-id="" tvg-name="KBS 신사와 아가씨" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KRBC4400001TZ_20260422T013647SQUARE.png&h=120" group-title="삼성TV 드라마",KBS 신사와 아가씨
-https://cc-ti96sp38bb5vq.akamaized.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-ti96sp38bb5vq/kbssmarttv001adv_new/master/playlist.m3u8?ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KRBC4400001TZ
-#EXTINF:-1 tvg-id="" tvg-name="KBS 태조 왕건" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KR4600012CR_20260422T012526SQUARE.png&h=120" group-title="삼성TV 드라마",KBS 태조 왕건
-https://cc-p6jn2jfspt0xw.akamaized.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-p6jn2jfspt0xw/kbssmarttv006adv/master/playlist.m3u8?ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KR4600012CR
-#EXTINF:-1 tvg-id="" tvg-name="신병 3" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KR2000007LI_20260805T003652SQUARE.png&h=120" group-title="삼성TV 드라마",신병 3
-https://ads.its-newid.net/api/manifest.m3u8?tp=samsung_tvplus&channel_name=%EC%8B%A0%EB%B3%913&channel_id=newid_356&apikey=b97c7a7d0c82424bb607e141ef215779&auth=61dcf822-fbe6fdf2-49a2fe1a-2155e7c4&ads.live=[CONTENT_LIVE]&ads.device_did=%7BPSID%7D&ads.ifa=[IFA]&ads.ifatype=[IFA_TYPE]&ads.lat=[LMT]&ads.donotsell=[DNS]&ads.ip=[IP]&ads.gdpr=[GDPR]&ads.gdprconsent=[GDPR_CONSENT]&ads.country=[COUNTRY]&ads.us_privacy={US_PRIVACY}&ads.appstoreurl=[APP_STOREURL]&ads.bundleid=[APP_BUNDLE]&ads.app.name={APP_NAME}&ads.appversion=[APP_VERSION]&ads.devicetype=[DEVICE_TYPE]&ads.devicemake=[DEVICE_MAKE]&ads.devicemodel=[DEVICE_MODEL]&ads.targetad=[TARGETAD_ALLOWED]&ads.content_title=[PROGRAM_TITLE]&ads.content_series=[SERIES_TITLE]&ads.content_season=[SEASON_TITLE]&ads.content_episode=[EPISODE_NO]&ads.content_length=[CONTENT_LENGTH]&ads.device.dnt={TARGETOPT}&ads.app_domain={APP_DOMAIN}&nh=true&ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KR2000007LI
-#EXTINF:-1 tvg-id="" tvg-name="신병 1  2 몰아보기" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KR1200002QR_20260805T003646SQUARE.png&h=120" group-title="삼성TV 드라마",신병 1  2 몰아보기
-https://ads.its-newid.net/api/manifest.m3u8?tp=samsung_tvplus&channel_name=%EC%8B%A0%EB%B3%91&channel_id=newid_211&apikey=b97c7a7d0c82424bb607e141ef215779&auth=deb77016-26ac5c3b-b760eb11-fc1f460d&ads.live=[CONTENT_LIVE]&ads.device_did=%7BPSID%7D&ads.ifa=[IFA]&ads.ifatype=[IFA_TYPE]&ads.lat=[LMT]&ads.donotsell=[DNS]&ads.ip=[IP]&ads.gdpr=[GDPR]&ads.gdprconsent=[GDPR_CONSENT]&ads.country=[COUNTRY]&ads.us_privacy={US_PRIVACY}&ads.appstoreurl=[APP_STOREURL]&ads.bundleid=[APP_BUNDLE]&ads.app.name={APP_NAME}&ads.appversion=[APP_VERSION]&ads.devicetype=[DEVICE_TYPE]&ads.devicemake=[DEVICE_MAKE]&ads.devicemodel=[DEVICE_MODEL]&ads.targetad=[TARGETAD_ALLOWED]&ads.content_title=[PROGRAM_TITLE]&ads.content_series=[SERIES_TITLE]&ads.content_season=[SEASON_TITLE]&ads.content_episode=[EPISODE_NO]&ads.content_length=[CONTENT_LENGTH]&ads.device.dnt={TARGETOPT}&ads.app_domain={APP_DOMAIN}&nh=true&ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KR1200002QR
-#EXTINF:-1 tvg-id="" tvg-name="고독한 미식가" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KRBC3500014ZH_20261006T043004SQUARE.png&h=120" group-title="삼성TV 드라마",고독한 미식가
-https://ads.its-newid.net/api/manifest.m3u8?tp=samsung_tvplus&channel_name=%EA%B3%A0%EB%8F%85%ED%95%9C%EB%AF%B8%EC%8B%9D%EA%B0%80&channel_id=newid_053&apikey=b97c7a7d0c82424bb607e141ef215779&auth=81147447-9d0d10d4-83f2a53f-47be0ae2&ads.live=[CONTENT_LIVE]&ads.device_did=%7BPSID%7D&ads.ifa=[IFA]&ads.ifatype=[IFA_TYPE]&ads.lat=[LMT]&ads.donotsell=[DNS]&ads.ip=[IP]&ads.gdpr=[GDPR]&ads.gdprconsent=[GDPR_CONSENT]&ads.country=[COUNTRY]&ads.us_privacy={US_PRIVACY}&ads.appstoreurl=[APP_STOREURL]&ads.bundleid=[APP_BUNDLE]&ads.app.name={APP_NAME}&ads.appversion=[APP_VERSION]&ads.devicetype=[DEVICE_TYPE]&ads.devicemake=[DEVICE_MAKE]&ads.devicemodel=[DEVICE_MODEL]&ads.targetad=[TARGETAD_ALLOWED]&ads.content_title=[PROGRAM_TITLE]&ads.content_series=[SERIES_TITLE]&ads.content_season=[SEASON_TITLE]&ads.content_episode=[EPISODE_NO]&ads.content_length=[CONTENT_LENGTH]&ads.device.dnt={TARGETOPT}&ads.app_domain={APP_DOMAIN}&nh=true&ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KRBC3500014ZH
-#EXTINF:-1 tvg-id="" tvg-name="나의 해리에게" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KR2000010K7_20260623T003332SQUARE.png&h=120" group-title="삼성TV 드라마",나의 해리에게
-https://ads.its-newid.net/api/manifest.m3u8?tp=samsung_tvplus&channel_name=%EB%82%98%EC%9D%98%ED%95%B4%EB%A6%AC%EC%97%90%EA%B2%8C&channel_id=newid_359&apikey=b97c7a7d0c82424bb607e141ef215779&auth=4dcc6a65-17de8ef2-344afd0a-cd6d94c4&ads.live=[CONTENT_LIVE]&ads.device_did=%7BPSID%7D&ads.ifa=[IFA]&ads.ifatype=[IFA_TYPE]&ads.lat=[LMT]&ads.donotsell=[DNS]&ads.ip=[IP]&ads.gdpr=[GDPR]&ads.gdprconsent=[GDPR_CONSENT]&ads.country=[COUNTRY]&ads.us_privacy={US_PRIVACY}&ads.appstoreurl=[APP_STOREURL]&ads.bundleid=[APP_BUNDLE]&ads.app.name={APP_NAME}&ads.appversion=[APP_VERSION]&ads.devicetype=[DEVICE_TYPE]&ads.devicemake=[DEVICE_MAKE]&ads.devicemodel=[DEVICE_MODEL]&ads.targetad=[TARGETAD_ALLOWED]&ads.content_title=[PROGRAM_TITLE]&ads.content_series=[SERIES_TITLE]&ads.content_season=[SEASON_TITLE]&ads.content_episode=[EPISODE_NO]&ads.content_length=[CONTENT_LENGTH]&ads.device.dnt={TARGETOPT}&ads.app_domain={APP_DOMAIN}&nh=true&ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KR2000010K7
-#EXTINF:-1 tvg-id="" tvg-name="JTBC 보좌관" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KR4000020F_20260805T003550SQUARE.png&h=120" group-title="삼성TV 드라마",JTBC 보좌관
-https://ads.its-newid.net/api/manifest.m3u8?tp=samsung_tvplus&channel_name=jtbc%EB%B3%B4%EC%A2%8C%EA%B4%80&channel_id=newid_031&apikey=b97c7a7d0c82424bb607e141ef215779&auth=c446a5ec-2be5d786-0deca405-f156cdb0&ads.live=[CONTENT_LIVE]&ads.device_did=%7BPSID%7D&ads.ifa=[IFA]&ads.ifatype=[IFA_TYPE]&ads.lat=[LMT]&ads.donotsell=[DNS]&ads.ip=[IP]&ads.gdpr=[GDPR]&ads.gdprconsent=[GDPR_CONSENT]&ads.country=[COUNTRY]&ads.us_privacy={US_PRIVACY}&ads.appstoreurl=[APP_STOREURL]&ads.bundleid=[APP_BUNDLE]&ads.app.name={APP_NAME}&ads.appversion=[APP_VERSION]&ads.devicetype=[DEVICE_TYPE]&ads.devicemake=[DEVICE_MAKE]&ads.devicemodel=[DEVICE_MODEL]&ads.targetad=[TARGETAD_ALLOWED]&ads.content_title=[PROGRAM_TITLE]&ads.content_series=[SERIES_TITLE]&ads.content_season=[SEASON_TITLE]&ads.content_episode=[EPISODE_NO]&ads.content_length=[CONTENT_LENGTH]&ads.device.dnt={TARGETOPT}&ads.app_domain={APP_DOMAIN}&nh=true&ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KR4000020F
-#EXTINF:-1 tvg-id="" tvg-name="SBS HOT CLIP 드라마" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KR4500003V9_20260422T012511SQUARE.png&h=120" group-title="삼성TV 드라마",SBS HOT CLIP 드라마
-https://cc-fy79bg9uhgg5u.akamaized.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-fy79bg9uhgg5u/sbsdrama/master.smil/ts:playlist.m3u8?ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KR4500003V9
-#EXTINF:-1 tvg-id="" tvg-name="행복배틀" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KR200000503_20260623T003414SQUARE.png&h=120" group-title="삼성TV 드라마",행복배틀
-https://ads.its-newid.net/api/manifest.m3u8?tp=samsung_tvplus&channel_name=%ED%96%89%EB%B3%B5%EB%B0%B0%ED%8B%80&channel_id=newid_354&apikey=b97c7a7d0c82424bb607e141ef215779&auth=904c5749-9603dc14-7ce86789-4cb0c622&ads.live=[CONTENT_LIVE]&ads.device_did=%7BPSID%7D&ads.ifa=[IFA]&ads.ifatype=[IFA_TYPE]&ads.lat=[LMT]&ads.donotsell=[DNS]&ads.ip=[IP]&ads.gdpr=[GDPR]&ads.gdprconsent=[GDPR_CONSENT]&ads.country=[COUNTRY]&ads.us_privacy={US_PRIVACY}&ads.appstoreurl=[APP_STOREURL]&ads.bundleid=[APP_BUNDLE]&ads.app.name={APP_NAME}&ads.appversion=[APP_VERSION]&ads.devicetype=[DEVICE_TYPE]&ads.devicemake=[DEVICE_MAKE]&ads.devicemodel=[DEVICE_MODEL]&ads.targetad=[TARGETAD_ALLOWED]&ads.content_title=[PROGRAM_TITLE]&ads.content_series=[SERIES_TITLE]&ads.content_season=[SEASON_TITLE]&ads.content_episode=[EPISODE_NO]&ads.content_length=[CONTENT_LENGTH]&ads.device.dnt={TARGETOPT}&ads.app_domain={APP_DOMAIN}&nh=true&ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KR200000503
-#EXTINF:-1 tvg-id="" tvg-name="유어 아너" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KR2000011GA_20261006T043018SQUARE.png&h=120" group-title="삼성TV 드라마",유어 아너
-https://ads.its-newid.net/api/manifest.m3u8?tp=samsung_tvplus&channel_name=%EC%9C%A0%EC%96%B4%EC%95%84%EB%84%88&channel_id=newid_360&apikey=b97c7a7d0c82424bb607e141ef215779&auth=f27d30be-204f6c82-a66f9bdb-fafc76b4&ads.live=[CONTENT_LIVE]&ads.device_did=%7BPSID%7D&ads.ifa=[IFA]&ads.ifatype=[IFA_TYPE]&ads.lat=[LMT]&ads.donotsell=[DNS]&ads.ip=[IP]&ads.gdpr=[GDPR]&ads.gdprconsent=[GDPR_CONSENT]&ads.country=[COUNTRY]&ads.us_privacy={US_PRIVACY}&ads.appstoreurl=[APP_STOREURL]&ads.bundleid=[APP_BUNDLE]&ads.app.name={APP_NAME}&ads.appversion=[APP_VERSION]&ads.devicetype=[DEVICE_TYPE]&ads.devicemake=[DEVICE_MAKE]&ads.devicemodel=[DEVICE_MODEL]&ads.targetad=[TARGETAD_ALLOWED]&ads.content_title=[PROGRAM_TITLE]&ads.content_series=[SERIES_TITLE]&ads.content_season=[SEASON_TITLE]&ads.content_episode=[EPISODE_NO]&ads.content_length=[CONTENT_LENGTH]&ads.device.dnt={TARGETOPT}&ads.app_domain={APP_DOMAIN}&nh=true&ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KR2000011GA
-#EXTINF:-1 tvg-id="" tvg-name="MBC every1 별순검" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KRBB500037T3_20260422T013655SQUARE.png&h=120" group-title="삼성TV 드라마",MBC every1 별순검
-https://ads.its-newid.net/api/manifest.m3u8?tp=samsung_tvplus&channel_name=mbcevery1%EB%B3%84%EC%88%9C%EA%B2%80&channel_id=newid_049&apikey=b97c7a7d0c82424bb607e141ef215779&auth=80d47d1d-b88fe1dd-bab31df3-623cfbeb&ads.live=[CONTENT_LIVE]&ads.device_did=%7BPSID%7D&ads.ifa=[IFA]&ads.ifatype=[IFA_TYPE]&ads.lat=[LMT]&ads.donotsell=[DNS]&ads.ip=[IP]&ads.gdpr=[GDPR]&ads.gdprconsent=[GDPR_CONSENT]&ads.country=[COUNTRY]&ads.us_privacy={US_PRIVACY}&ads.appstoreurl=[APP_STOREURL]&ads.bundleid=[APP_BUNDLE]&ads.app.name={APP_NAME}&ads.appversion=[APP_VERSION]&ads.devicetype=[DEVICE_TYPE]&ads.devicemake=[DEVICE_MAKE]&ads.devicemodel=[DEVICE_MODEL]&ads.targetad=[TARGETAD_ALLOWED]&ads.content_title=[PROGRAM_TITLE]&ads.content_series=[SERIES_TITLE]&ads.content_season=[SEASON_TITLE]&ads.content_episode=[EPISODE_NO]&ads.content_length=[CONTENT_LENGTH]&ads.device.dnt={TARGETOPT}&ads.app_domain={APP_DOMAIN}&nh=true&ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KRBB500037T3
-#EXTINF:-1 tvg-id="" tvg-name="야한 사진관" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KR2000008LX_20260623T003409SQUARE.png&h=120" group-title="삼성TV 드라마",야한 사진관
-https://ads.its-newid.net/api/manifest.m3u8?tp=samsung_tvplus&channel_name=%EC%95%BC%ED%95%9C%EC%82%AC%EC%A7%84%EA%B4%80&channel_id=newid_357&apikey=b97c7a7d0c82424bb607e141ef215779&auth=f4ac2cb7-cd146d01-bebf31f3-17a77737&ads.live=[CONTENT_LIVE]&ads.device_did=%7BPSID%7D&ads.ifa=[IFA]&ads.ifatype=[IFA_TYPE]&ads.lat=[LMT]&ads.donotsell=[DNS]&ads.ip=[IP]&ads.gdpr=[GDPR]&ads.gdprconsent=[GDPR_CONSENT]&ads.country=[COUNTRY]&ads.us_privacy={US_PRIVACY}&ads.appstoreurl=[APP_STOREURL]&ads.bundleid=[APP_BUNDLE]&ads.app.name={APP_NAME}&ads.appversion=[APP_VERSION]&ads.devicetype=[DEVICE_TYPE]&ads.devicemake=[DEVICE_MAKE]&ads.devicemodel=[DEVICE_MODEL]&ads.targetad=[TARGETAD_ALLOWED]&ads.content_title=[PROGRAM_TITLE]&ads.content_series=[SERIES_TITLE]&ads.content_season=[SEASON_TITLE]&ads.content_episode=[EPISODE_NO]&ads.content_length=[CONTENT_LENGTH]&ads.device.dnt={TARGETOPT}&ads.app_domain={APP_DOMAIN}&nh=true&ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KR2000008LX
-#EXTINF:-1 tvg-id="" tvg-name="tvN 견우와 선녀" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KRBC800013YF_20261006T042930SQUARE.png&h=120" group-title="삼성TV 드라마",tvN 견우와 선녀
-https://cc-v69ifyrbui1yv.akamaized.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-v69ifyrbui1yv/AMCJ/CJENM/KRBC800013YF/playlist.m3u8?ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KRBC800013YF
-#EXTINF:-1 tvg-id="" tvg-name="MBC HOT CLIP 드라마" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KR4500001KZ_20260422T012505SQUARE.png&h=120" group-title="삼성TV 드라마",MBC HOT CLIP 드라마
-https://cc-5nc55lbz7umuf.akamaized.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-5nc55lbz7umuf/mbcdrama/master.smil/ts:playlist.m3u8?ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KR4500001KZ
-#EXTINF:-1 tvg-id="" tvg-name="tvN 인급동" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KRBC3200031KO_20261020T053330SQUARE.png&h=120" group-title="삼성TV 드라마",tvN 인급동
-https://d2hbbjdi2lggii.cloudfront.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-sbr4a75paq6du-ssai-prd/080e7b54_ab07_49c8_b8e3_8811cf63fde2/hls/playlist.m3u8?&ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.service_id=KRBC3200031KO
-#EXTINF:-1 tvg-id="" tvg-name="마당이 있는 집" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KR2000006NC_20260623T003351SQUARE.png&h=120" group-title="삼성TV 드라마",마당이 있는 집
-https://ads.its-newid.net/api/manifest.m3u8?tp=samsung_tvplus&channel_name=%EB%A7%88%EB%8B%B9%EC%9D%B4%EC%9E%88%EB%8A%94%EC%A7%91&channel_id=newid_355&apikey=b97c7a7d0c82424bb607e141ef215779&auth=053c83dc-a0f14ce7-8bf5a860-7a4256d1&ads.live=[CONTENT_LIVE]&ads.device_did=%7BPSID%7D&ads.ifa=[IFA]&ads.ifatype=[IFA_TYPE]&ads.lat=[LMT]&ads.donotsell=[DNS]&ads.ip=[IP]&ads.gdpr=[GDPR]&ads.gdprconsent=[GDPR_CONSENT]&ads.country=[COUNTRY]&ads.us_privacy={US_PRIVACY}&ads.appstoreurl=[APP_STOREURL]&ads.bundleid=[APP_BUNDLE]&ads.app.name={APP_NAME}&ads.appversion=[APP_VERSION]&ads.devicetype=[DEVICE_TYPE]&ads.devicemake=[DEVICE_MAKE]&ads.devicemodel=[DEVICE_MODEL]&ads.targetad=[TARGETAD_ALLOWED]&ads.content_title=[PROGRAM_TITLE]&ads.content_series=[SERIES_TITLE]&ads.content_season=[SEASON_TITLE]&ads.content_episode=[EPISODE_NO]&ads.content_length=[CONTENT_LENGTH]&ads.device.dnt={TARGETOPT}&ads.app_domain={APP_DOMAIN}&nh=true&ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KR2000006NC
-#EXTINF:-1 tvg-id="" tvg-name="TV조선 나의 해피엔드" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KRBC35000169K_20260422T013902SQUARE.png&h=120" group-title="삼성TV 드라마",TV조선 나의 해피엔드
-https://ads.its-newid.net/api/manifest.m3u8?tp=samsung_tvplus&channel_name=tv%EC%A1%B0%EC%84%A0%EB%82%98%EC%9D%98%ED%95%B4%ED%94%BC%EC%97%94%EB%93%9C&channel_id=newid_055&apikey=b97c7a7d0c82424bb607e141ef215779&auth=48d483bb-2b2272fe-dc2d0f8a-f19168c8&ads.live=[CONTENT_LIVE]&ads.device_did=%7BPSID%7D&ads.ifa=[IFA]&ads.ifatype=[IFA_TYPE]&ads.lat=[LMT]&ads.donotsell=[DNS]&ads.ip=[IP]&ads.gdpr=[GDPR]&ads.gdprconsent=[GDPR_CONSENT]&ads.country=[COUNTRY]&ads.us_privacy={US_PRIVACY}&ads.appstoreurl=[APP_STOREURL]&ads.bundleid=[APP_BUNDLE]&ads.app.name={APP_NAME}&ads.appversion=[APP_VERSION]&ads.devicetype=[DEVICE_TYPE]&ads.devicemake=[DEVICE_MAKE]&ads.devicemodel=[DEVICE_MODEL]&ads.targetad=[TARGETAD_ALLOWED]&ads.content_title=[PROGRAM_TITLE]&ads.content_series=[SERIES_TITLE]&ads.content_season=[SEASON_TITLE]&ads.content_episode=[EPISODE_NO]&ads.content_length=[CONTENT_LENGTH]&ads.device.dnt={TARGETOPT}&ads.app_domain={APP_DOMAIN}&nh=true&ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KRBC35000169K
-#EXTINF:-1 tvg-id="" tvg-name="구필수는 없다" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KR2000004DJ_20260623T003321SQUARE.png&h=120" group-title="삼성TV 드라마",구필수는 없다
-https://ads.its-newid.net/api/manifest.m3u8?tp=samsung_tvplus&channel_name=%EA%B5%AC%ED%95%84%EC%88%98%EB%8A%94%EC%97%86%EB%8B%A4&channel_id=newid_353&apikey=b97c7a7d0c82424bb607e141ef215779&auth=ccfc7420-16de2ecd-d42a02d5-cc6d34fb&ads.live=[CONTENT_LIVE]&ads.device_did=%7BPSID%7D&ads.ifa=[IFA]&ads.ifatype=[IFA_TYPE]&ads.lat=[LMT]&ads.donotsell=[DNS]&ads.ip=[IP]&ads.gdpr=[GDPR]&ads.gdprconsent=[GDPR_CONSENT]&ads.country=[COUNTRY]&ads.us_privacy={US_PRIVACY}&ads.appstoreurl=[APP_STOREURL]&ads.bundleid=[APP_BUNDLE]&ads.app.name={APP_NAME}&ads.appversion=[APP_VERSION]&ads.devicetype=[DEVICE_TYPE]&ads.devicemake=[DEVICE_MAKE]&ads.devicemodel=[DEVICE_MODEL]&ads.targetad=[TARGETAD_ALLOWED]&ads.content_title=[PROGRAM_TITLE]&ads.content_series=[SERIES_TITLE]&ads.content_season=[SEASON_TITLE]&ads.content_episode=[EPISODE_NO]&ads.content_length=[CONTENT_LENGTH]&ads.device.dnt={TARGETOPT}&ads.app_domain={APP_DOMAIN}&nh=true&ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KR2000004DJ
-#EXTINF:-1 tvg-id="" tvg-name="낮에 뜨는 달" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KR2000009EC_20260623T003337SQUARE.png&h=120" group-title="삼성TV 드라마",낮에 뜨는 달
-https://ads.its-newid.net/api/manifest.m3u8?tp=samsung_tvplus&channel_name=%EB%82%AE%EC%97%90%EB%9C%A8%EB%8A%94%EB%8B%AC&channel_id=newid_358&apikey=b97c7a7d0c82424bb607e141ef215779&auth=d8bcbef0-212c1e01-c35732e3-fb9f0437&ads.live=[CONTENT_LIVE]&ads.device_did=%7BPSID%7D&ads.ifa=[IFA]&ads.ifatype=[IFA_TYPE]&ads.lat=[LMT]&ads.donotsell=[DNS]&ads.ip=[IP]&ads.gdpr=[GDPR]&ads.gdprconsent=[GDPR_CONSENT]&ads.country=[COUNTRY]&ads.us_privacy={US_PRIVACY}&ads.appstoreurl=[APP_STOREURL]&ads.bundleid=[APP_BUNDLE]&ads.app.name={APP_NAME}&ads.appversion=[APP_VERSION]&ads.devicetype=[DEVICE_TYPE]&ads.devicemake=[DEVICE_MAKE]&ads.devicemodel=[DEVICE_MODEL]&ads.targetad=[TARGETAD_ALLOWED]&ads.content_title=[PROGRAM_TITLE]&ads.content_series=[SERIES_TITLE]&ads.content_season=[SEASON_TITLE]&ads.content_episode=[EPISODE_NO]&ads.content_length=[CONTENT_LENGTH]&ads.device.dnt={TARGETOPT}&ads.app_domain={APP_DOMAIN}&nh=true&ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KR2000009EC
-#EXTINF:-1 tvg-id="" tvg-name="라이딩 인생" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KR2000003T6_20260623T003343SQUARE.png&h=120" group-title="삼성TV 드라마",라이딩 인생
-https://ads.its-newid.net/api/manifest.m3u8?tp=samsung_tvplus&channel_name=%EB%9D%BC%EC%9D%B4%EB%94%A9%EC%9D%B8%EC%83%9D&channel_id=newid_352&apikey=b97c7a7d0c82424bb607e141ef215779&auth=598ca0b5-202cbe3e-2337cd3c-fa9fa408&ads.live=[CONTENT_LIVE]&ads.device_did=%7BPSID%7D&ads.ifa=[IFA]&ads.ifatype=[IFA_TYPE]&ads.lat=[LMT]&ads.donotsell=[DNS]&ads.ip=[IP]&ads.gdpr=[GDPR]&ads.gdprconsent=[GDPR_CONSENT]&ads.country=[COUNTRY]&ads.us_privacy={US_PRIVACY}&ads.appstoreurl=[APP_STOREURL]&ads.bundleid=[APP_BUNDLE]&ads.app.name={APP_NAME}&ads.appversion=[APP_VERSION]&ads.devicetype=[DEVICE_TYPE]&ads.devicemake=[DEVICE_MAKE]&ads.devicemodel=[DEVICE_MODEL]&ads.targetad=[TARGETAD_ALLOWED]&ads.content_title=[PROGRAM_TITLE]&ads.content_series=[SERIES_TITLE]&ads.content_season=[SEASON_TITLE]&ads.content_episode=[EPISODE_NO]&ads.content_length=[CONTENT_LENGTH]&ads.device.dnt={TARGETOPT}&ads.app_domain={APP_DOMAIN}&nh=true&ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KR2000003T6
-#EXTINF:-1 tvg-id="" tvg-name="투니버스 짱구는 못말려" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KR10000017U_20260422T014119SQUARE.png&h=120" group-title="삼성TV 어린이",투니버스 짱구는 못말려
-https://cc-v7nnv61o1taua.akamaized.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-v7nnv61o1taua/AMCJ/CJENM/KR10000017U/playlist.m3u8?ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KR10000017U
-#EXTINF:-1 tvg-id="" tvg-name="베베핀" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KRBC3500020AF_20260722T004048SQUARE.png&h=120" group-title="삼성TV 어린이",베베핀
-https://ads.its-newid.net/api/manifest.m3u8?tp=samsung_tvplus&channel_name=%EB%B2%A0%EB%B2%A0%ED%95%80&channel_id=newid_059&apikey=b97c7a7d0c82424bb607e141ef215779&auth=00246a02-9c0db0eb-63925ae0-46beaadd&coppa=1&ads.live=[CONTENT_LIVE]&ads.device_did=%7BPSID%7D&ads.ifa=[IFA]&ads.ifatype=[IFA_TYPE]&ads.lat=[LMT]&ads.donotsell=[DNS]&ads.ip=[IP]&ads.gdpr=[GDPR]&ads.gdprconsent=[GDPR_CONSENT]&ads.country=[COUNTRY]&ads.us_privacy={US_PRIVACY}&ads.appstoreurl=[APP_STOREURL]&ads.bundleid=[APP_BUNDLE]&ads.app.name={APP_NAME}&ads.appversion=[APP_VERSION]&ads.devicetype=[DEVICE_TYPE]&ads.devicemake=[DEVICE_MAKE]&ads.devicemodel=[DEVICE_MODEL]&ads.targetad=[TARGETAD_ALLOWED]&ads.content_title=[PROGRAM_TITLE]&ads.content_series=[SERIES_TITLE]&ads.content_season=[SEASON_TITLE]&ads.content_episode=[EPISODE_NO]&ads.content_length=[CONTENT_LENGTH]&ads.device.dnt={TARGETOPT}&ads.app_domain={APP_DOMAIN}&nh=true&ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KRBC3500020AF
-#EXTINF:-1 tvg-id="" tvg-name="투니버스 명탐정 코난 (자막)" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KRBC32000200B_20260422T014116SQUARE.png&h=120" group-title="삼성TV 어린이",투니버스 명탐정 코난 (자막)
-https://cc-qy3bd3dkwwk4x.akamaized.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-qy3bd3dkwwk4x/AMCJ/CJENM/KRBC32000200B/playlist.m3u8?ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KRBC32000200B
-#EXTINF:-1 tvg-id="" tvg-name="Animax 요리왕 비룡 더 마스터" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KRBC3200001VC_20260422T013525SQUARE.png&h=120" group-title="삼성TV 어린이",Animax 요리왕 비룡 더 마스터
-https://ads.its-newid.net/api/manifest.m3u8?tp=samsung_tvplus&channel_name=animax%EC%9A%94%EB%A6%AC%EC%99%95%EB%B9%84%EB%A3%A1%EB%8D%94%EB%A7%88%EC%8A%A4%ED%84%B0&channel_id=newid_024&apikey=b97c7a7d0c82424bb607e141ef215779&auth=e9963ef1-e25f558f-49451fd9-38ec4fb9&ads.live=[CONTENT_LIVE]&ads.device_did=%7BPSID%7D&ads.ifa=[IFA]&ads.ifatype=[IFA_TYPE]&ads.lat=[LMT]&ads.donotsell=[DNS]&ads.ip=[IP]&ads.gdpr=[GDPR]&ads.gdprconsent=[GDPR_CONSENT]&ads.country=[COUNTRY]&ads.us_privacy={US_PRIVACY}&ads.appstoreurl=[APP_STOREURL]&ads.bundleid=[APP_BUNDLE]&ads.app.name={APP_NAME}&ads.appversion=[APP_VERSION]&ads.devicetype=[DEVICE_TYPE]&ads.devicemake=[DEVICE_MAKE]&ads.devicemodel=[DEVICE_MODEL]&ads.targetad=[TARGETAD_ALLOWED]&ads.content_title=[PROGRAM_TITLE]&ads.content_series=[SERIES_TITLE]&ads.content_season=[SEASON_TITLE]&ads.content_episode=[EPISODE_NO]&ads.content_length=[CONTENT_LENGTH]&ads.device.dnt={TARGETOPT}&ads.app_domain={APP_DOMAIN}&nh=true&ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KRBC3200001VC
-#EXTINF:-1 tvg-id="" tvg-name="투니버스 흔한남매의 안흔한일기" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KRBC3200017JQ_20260422T014121SQUARE.png&h=120" group-title="삼성TV 어린이",투니버스 흔한남매의 안흔한일기
-https://cc-czlqe5bh8do25.akamaized.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-czlqe5bh8do25/TFJU/CJENM/KRBC3200017JQ/playlist/KRBC3200017JQ/playlist.m3u8?ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KRBC3200017JQ
-#EXTINF:-1 tvg-id="" tvg-name="ch.핑크퐁" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KRBC32000126M_20260513T012855SQUARE.png&h=120" group-title="삼성TV 어린이",ch.핑크퐁
-https://ads.its-newid.net/api/manifest.m3u8?tp=samsung_tvplus&channel_name=ch.%ED%95%91%ED%81%AC%ED%90%81&channel_id=newid_022&apikey=b97c7a7d0c82424bb607e141ef215779&auth=2056c90d-547037a5-169ab56c-8ec32d93&coppa=1&ads.live=[CONTENT_LIVE]&ads.device_did=%7BPSID%7D&ads.ifa=[IFA]&ads.ifatype=[IFA_TYPE]&ads.lat=[LMT]&ads.donotsell=[DNS]&ads.ip=[IP]&ads.gdpr=[GDPR]&ads.gdprconsent=[GDPR_CONSENT]&ads.country=[COUNTRY]&ads.us_privacy={US_PRIVACY}&ads.appstoreurl=[APP_STOREURL]&ads.bundleid=[APP_BUNDLE]&ads.app.name={APP_NAME}&ads.appversion=[APP_VERSION]&ads.devicetype=[DEVICE_TYPE]&ads.devicemake=[DEVICE_MAKE]&ads.devicemodel=[DEVICE_MODEL]&ads.targetad=[TARGETAD_ALLOWED]&ads.content_title=[PROGRAM_TITLE]&ads.content_series=[SERIES_TITLE]&ads.content_season=[SEASON_TITLE]&ads.content_episode=[EPISODE_NO]&ads.content_length=[CONTENT_LENGTH]&ads.device.dnt={TARGETOPT}&ads.app_domain={APP_DOMAIN}&nh=true&ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KRBC32000126M
-#EXTINF:-1 tvg-id="" tvg-name="로보카폴리 TV" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KRBC3500013VH_20260422T014017SQUARE.png&h=120" group-title="삼성TV 어린이",로보카폴리 TV
-https://ads.its-newid.net/api/manifest.m3u8?tp=samsung_tvplus&channel_name=%EB%A1%9C%EB%B3%B4%EC%B9%B4%ED%8F%B4%EB%A6%ACtv&channel_id=newid_052&apikey=b97c7a7d0c82424bb607e141ef215779&auth=1464a0d2-abff8027-74ef6ad6-714c9a11&coppa=1&ads.live=[CONTENT_LIVE]&ads.device_did=%7BPSID%7D&ads.ifa=[IFA]&ads.ifatype=[IFA_TYPE]&ads.lat=[LMT]&ads.donotsell=[DNS]&ads.ip=[IP]&ads.gdpr=[GDPR]&ads.gdprconsent=[GDPR_CONSENT]&ads.country=[COUNTRY]&ads.us_privacy={US_PRIVACY}&ads.appstoreurl=[APP_STOREURL]&ads.bundleid=[APP_BUNDLE]&ads.app.name={APP_NAME}&ads.appversion=[APP_VERSION]&ads.devicetype=[DEVICE_TYPE]&ads.devicemake=[DEVICE_MAKE]&ads.devicemodel=[DEVICE_MODEL]&ads.targetad=[TARGETAD_ALLOWED]&ads.content_title=[PROGRAM_TITLE]&ads.content_series=[SERIES_TITLE]&ads.content_season=[SEASON_TITLE]&ads.content_episode=[EPISODE_NO]&ads.content_length=[CONTENT_LENGTH]&ads.device.dnt={TARGETOPT}&ads.app_domain={APP_DOMAIN}&nh=true&ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KRBC3500013VH
-#EXTINF:-1 tvg-id="" tvg-name="뽀요TV" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KR900001U5_20260812T044642SQUARE.png&h=120" group-title="삼성TV 어린이",뽀요TV
-https://ads.its-newid.net/api/manifest.m3u8?tp=samsung_tvplus&channel_name=%EB%BD%80%EC%9A%94tv&channel_id=newid_204&apikey=b97c7a7d0c82424bb607e141ef215779&auth=f367eb0b-ef16de32-f3c950cd-35a5c404&coppa=1&ads.live=[CONTENT_LIVE]&ads.device_did=%7BPSID%7D&ads.ifa=[IFA]&ads.ifatype=[IFA_TYPE]&ads.lat=[LMT]&ads.donotsell=[DNS]&ads.ip=[IP]&ads.gdpr=[GDPR]&ads.gdprconsent=[GDPR_CONSENT]&ads.country=[COUNTRY]&ads.us_privacy={US_PRIVACY}&ads.appstoreurl=[APP_STOREURL]&ads.bundleid=[APP_BUNDLE]&ads.app.name={APP_NAME}&ads.appversion=[APP_VERSION]&ads.devicetype=[DEVICE_TYPE]&ads.devicemake=[DEVICE_MAKE]&ads.devicemodel=[DEVICE_MODEL]&ads.targetad=[TARGETAD_ALLOWED]&ads.content_title=[PROGRAM_TITLE]&ads.content_series=[SERIES_TITLE]&ads.content_season=[SEASON_TITLE]&ads.content_episode=[EPISODE_NO]&ads.content_length=[CONTENT_LENGTH]&ads.device.dnt={TARGETOPT}&ads.app_domain={APP_DOMAIN}&nh=true&ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KR900001U5
-#EXTINF:-1 tvg-id="" tvg-name="코코비TV" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KRBB500035VF_20260422T014114SQUARE.png&h=120" group-title="삼성TV 어린이",코코비TV
-https://ads.its-newid.net/api/manifest.m3u8?tp=samsung_tvplus&channel_name=%EC%BD%94%EC%BD%94%EB%B9%84tv&channel_id=newid_048&apikey=b97c7a7d0c82424bb607e141ef215779&auth=15a4a988-8e7d712e-4daed21a-54ce6b18&coppa=1&ads.live=[CONTENT_LIVE]&ads.device_did=%7BPSID%7D&ads.ifa=[IFA]&ads.ifatype=[IFA_TYPE]&ads.lat=[LMT]&ads.donotsell=[DNS]&ads.ip=[IP]&ads.gdpr=[GDPR]&ads.gdprconsent=[GDPR_CONSENT]&ads.country=[COUNTRY]&ads.us_privacy={US_PRIVACY}&ads.appstoreurl=[APP_STOREURL]&ads.bundleid=[APP_BUNDLE]&ads.app.name={APP_NAME}&ads.appversion=[APP_VERSION]&ads.devicetype=[DEVICE_TYPE]&ads.devicemake=[DEVICE_MAKE]&ads.devicemodel=[DEVICE_MODEL]&ads.targetad=[TARGETAD_ALLOWED]&ads.content_title=[PROGRAM_TITLE]&ads.content_series=[SERIES_TITLE]&ads.content_season=[SEASON_TITLE]&ads.content_episode=[EPISODE_NO]&ads.content_length=[CONTENT_LENGTH]&ads.device.dnt={TARGETOPT}&ads.app_domain={APP_DOMAIN}&nh=true&ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KRBB500035VF
-#EXTINF:-1 tvg-id="" tvg-name="tvN 벌거벗은 세계사 요약.zip" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KRBC3200021ZA_20261006T042933SQUARE.png&h=120" group-title="삼성TV 시사/교양",tvN 벌거벗은 세계사 요약.zip
-https://cc-zl8tt493cjf5g.akamaized.net/v1/master/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-zl8tt493cjf5g/AMCJ/CJENM/KRBC3200021ZA/playlist.m3u8?ads.device_did=%7BPSID%7D&ads.device_dnt=%7BTARGETOPT%7D&ads.app_domain=%7BAPP_DOMAIN%7D&ads.app_name=%7BAPP_NAME%7D&ads.ssai_vendor=SSSLIVE&ads.afsdk_params=%7BAFSDK_VALUE%7D&ads.service_id=KRBC3200021ZA
-#EXTINF:-1 tvg-id="" tvg-name="EBS 극한 직업" tvg-logo="https://tvpdotcomdynamiclogopus.samsungcloud.tv/resize?url=https://tvpnlogopus.samsungcloud.tv/platform/image/sourcelogo/vc/00/02/34/KRBC40000010R_20261006T042815SQUARE.png&h=120" group-title="삼성TV 시사/교양",EBS 극한 직업
-https://ads.its-newid.net/api/manifest.m3u8?tp=samsung_tvplus&channel_name=ebs%EA%B7%B9%ED%95%9C%EC%A7%81%EC%97%85&channel_id=newid_065&apikey=b97c7a7d0c82424bb607e141ef215779&auth=12b5bcdb-46a481a4-6c3fc0fe-9c179b92&ads.live=[CONTENT_LIVE]&ads.device_did=%7BPSID%7D&ads.ifa=[IFA]&ads.ifatype=[IFA_TYPE]&ads.lat=[LMT]&ads.donotsell=[DNS]&ads.ip=[IP]&ads.gdpr=[GDPR]&ads.gdprconsent=[GDPR_CONSENT]&ads.country=[COUNTRY]&ad`;
+const M3U_ITEMS = [
+  // 한국-종합편성
+  {id:'YTN', name:'YTN', group:'한국-종합편성', logo:'https://pjytv.760515.xyz/logo/YTN.png', type:'hls', url:'https://backup.760515.xyz/playlist/YTN-playlist.m3u8'},
+  {id:'YTN2', name:'YTN2', group:'한국-종합편성', logo:'https://pjytv.760515.xyz/logo/YTN2.png', type:'hls', url:'https://backup.760515.xyz/playlist/YTN2-playlist.m3u8'},
+  {id:'YTN사이언스', name:'YTN사이언스', group:'한국-종합편성', logo:'https://pjytv.760515.xyz/logo/YTN사이언스.png', type:'hls', url:'https://backup.760515.xyz/playlist/YTN%EC%82%AC%EC%9D%B4%EC%96%B8%EC%8A%A4-playlist.m3u8'},
+  {id:'연합뉴스TV', name:'연합뉴스TV', group:'한국-종합편성', logo:'https://pjytv.760515.xyz/logo/연합뉴스TV.png', type:'hls', url:'https://backup.760515.xyz/playlist/%EC%97%B0%ED%95%A9%EB%89%B4%EC%8A%A4TV-playlist.m3u8'},
+  {id:'JTBC', name:'JTBC', group:'한국-종합편성', logo:'https://pjytv.760515.xyz/logo/JTBC.png', type:'hls', url:'https://backup.760515.xyz/playlist/JTBC-playlist.m3u8'},
+  {id:'JTBC2', name:'JTBC2', group:'한국-종합편성', logo:'https://pjytv.760515.xyz/logo/JTBC2.png', type:'hls', url:'https://backup.760515.xyz/playlist/JTBC2-playlist.m3u8'},
+  {id:'JTBC4', name:'JTBC4', group:'한국-종합편성', logo:'https://pjytv.760515.xyz/logo/JTBC4.png', type:'hls', url:'https://backup.760515.xyz/playlist/JTBC4-playlist.m3u8'},
+  {id:'tvN', name:'tvN', group:'한국-종합편성', logo:'https://pjytv.760515.xyz/logo/tvN.png', type:'hls', url:'https://backup.760515.xyz/playlist/tvN-playlist.m3u8'},
+  {id:'tvN SHOW', name:'tvN SHOW', group:'한국-종합편성', logo:'https://pjytv.760515.xyz/logo/tvN SHOW.png', type:'hls', url:'https://backup.760515.xyz/playlist/tvN%20SHOW-playlist.m3u8'},
+  {id:'tvN DRAMA', name:'tvN DRAMA', group:'한국-종합편성', logo:'https://pjytv.760515.xyz/logo/tvN DRAMA.png', type:'hls', url:'https://backup.760515.xyz/playlist/tvN%20DRAMA-playlist.m3u8'},
+  {id:'tvN STORY', name:'tvN STORY', group:'한국-종합편성', logo:'https://pjytv.760515.xyz/logo/tvN STORY.png', type:'hls', url:'https://backup.760515.xyz/playlist/tvN%20STORY-playlist.m3u8'},
+  {id:'채널A', name:'채널A', group:'한국-종합편성', logo:'https://pjytv.760515.xyz/logo/채널A.png', type:'hls', url:'https://backup.760515.xyz/playlist/%EC%B1%84%EB%84%90A-playlist.m3u8'},
+  {id:'채널A플러스', name:'채널A플러스', group:'한국-종합편성', logo:'https://pjytv.760515.xyz/logo/채널A플러스.png', type:'hls', url:'https://backup.760515.xyz/playlist/%EC%B1%84%EB%84%90A%ED%94%8C%EB%9F%AC%EC%8A%A4-playlist.m3u8'},
+  {id:'TV CHOSUN', name:'TV CHOSUN', group:'한국-종합편성', logo:'https://pjytv.760515.xyz/logo/TV CHOSUN.png', type:'hls', url:'https://backup.760515.xyz/playlist/TV%20CHOSUN-playlist.m3u8'},
+  {id:'TV CHOSUN 2', name:'TV CHOSUN 2', group:'한국-종합편성', logo:'https://pjytv.760515.xyz/logo/TV CHOSUN 2.png', type:'hls', url:'https://backup.760515.xyz/playlist/TV%20CHOSUN%202-playlist.m3u8'},
+  {id:'Mnet', name:'Mnet', group:'한국-종합편성', logo:'https://pjytv.760515.xyz/logo/Mnet.png', type:'hls', url:'https://backup.760515.xyz/playlist/Mnet-playlist.m3u8'},
+  {id:'MBN', name:'MBN', group:'한국-종합편성', logo:'https://pjytv.760515.xyz/logo/MBN.png', type:'hls', url:'https://backup.760515.xyz/playlist/MBN-playlist.m3u8'},
+  {id:'MBN 플러스', name:'MBN 플러스', group:'한국-종합편성', logo:'https://pjytv.760515.xyz/logo/MBN 플러스.png', type:'hls', url:'https://backup.760515.xyz/playlist/MBN%20%ED%94%8C%EB%9F%AC%EC%8A%A4-playlist.m3u8'},
+  {id:'LIFETIME', name:'LIFETIME', group:'한국-종합편성', logo:'https://pjytv.760515.xyz/logo/LIFETIME.png', type:'hls', url:'https://backup.760515.xyz/playlist/LIFETIME-playlist.m3u8'},
+  {id:'중화TV', name:'중화TV', group:'한국-종합편성', logo:'https://pjytv.760515.xyz/logo/중화TV.png', type:'hls', url:'https://backup.760515.xyz/playlist/%EC%A4%91%ED%99%94TV-playlist.m3u8'},
+  {id:'히스토리', name:'히스토리', group:'한국-종합편성', logo:'https://pjytv.760515.xyz/logo/히스토리.png', type:'hls', url:'https://backup.760515.xyz/playlist/%ED%9E%88%EC%8A%A4%ED%86%A0%EB%A6%AC-playlist.m3u8'},
+  {id:'EBS1_종합', name:'EBS1', group:'한국-종합편성', logo:'https://pjytv.760515.xyz/logo/EBS1.png', type:'hls', url:'https://backup.760515.xyz/playlist/EBS1-playlist.m3u8'},
+  {id:'국회방송(NATV)', name:'국회방송(NATV)', group:'한국-종합편성', logo:'https://pjytv.760515.xyz/logo/국회방송(NATV).png', type:'hls', url:'https://backup.760515.xyz/playlist/%EA%B5%AD%ED%9A%8C%EB%B0%A9%EC%86%A1(NATV)-playlist.m3u8'},
+  {id:'ANIBOX', name:'ANIBOX', group:'한국-종합편성', logo:'https://pjytv.760515.xyz/logo/ANIBOX.png', type:'hls', url:'https://backup.760515.xyz/playlist/ANIBOX-playlist.m3u8'},
+  {id:'애니맥스', name:'애니맥스', group:'한국-종합편성', logo:'https://pjytv.760515.xyz/logo/애니맥스.png', type:'hls', url:'https://backup.760515.xyz/playlist/%EC%95%A0%EB%8B%88%EB%A7%A5%EC%8A%A4-playlist.m3u8'},
+  {id:'투니버스', name:'투니버스', group:'한국-종합편성', logo:'https://pjytv.760515.xyz/logo/투니버스.png', type:'hls', url:'https://backup.760515.xyz/playlist/%ED%88%AC%EB%8B%88%EB%B2%84%EC%8A%A4-playlist.m3u8'},
 
-        // App States
-        let channels = [];
-        let currentChannel = null;
-        let hlsPlayer = null;
+  // 한국-지상파
+  {id:'KBS1', name:'KBS1', group:'한국-지상파', logo:'https://backup.760515.xyz/logo/KBS1.png', type:'hls', url:'https://backup.760515.xyz/playlist/KBS1-playlist.m3u8'},
+  {id:'KBS2', name:'KBS2', group:'한국-지상파', logo:'https://backup.760515.xyz/logo/KBS2.png', type:'hls', url:'https://backup.760515.xyz/playlist/KBS2-playlist.m3u8'},
+  {id:'KBS드라마', name:'KBS드라마', group:'한국-지상파', logo:'https://backup.760515.xyz/logo/KBS드라마.png', type:'hls', url:'https://kbsndrama.gscdn.kbs.co.kr/kbsndrama-01/kbsndrama-01_sd.m3u8'},
+  {id:'KBS조이', name:'KBS조이', group:'한국-지상파', logo:'https://backup.760515.xyz/logo/KBS조이.png', type:'hls', url:'https://kbsnjoy.gscdn.kbs.co.kr/kbsnjoy-02/kbsnjoy-02_sd.m3u8'},
+  {id:'KBS키즈', name:'KBS키즈', group:'한국-지상파', logo:'https://backup.760515.xyz/logo/KBS키즈.png', type:'hls', url:'https://kbsnkids.gscdn.kbs.co.kr/kbsnkids-01/kbsnkids-01_sd.m3u8'},
+  {id:'KBS LIFE', name:'KBS LIFE', group:'한국-지상파', logo:'https://backup.760515.xyz/logo/KBS LIFE.png', type:'hls', url:'https://kbsnlife.gscdn.kbs.co.kr/kbsnlife-01/kbsnlife-01_sd.m3u8'},
+  {id:'KBS Story', name:'KBS Story', group:'한국-지상파', logo:'https://backup.760515.xyz/logo/KBS Story.png', type:'hls', url:'https://kbsnw.gscdn.kbs.co.kr/kbsnw-01/kbsnw-01_sd.m3u8'},
+  {id:'KBS WORLD', name:'KBS WORLD', group:'한국-지상파', logo:'https://backup.760515.xyz/logo/KBS WORLD.png', type:'hls', url:'https://world.gscdn.kbs.co.kr/world-01/world-01_sd.m3u8'},
+  {id:'KBS뉴스', name:'KBS뉴스', group:'한국-지상파', logo:'https://backup.760515.xyz/logo/KBS뉴스.png', type:'hls', url:'https://news24.gscdn.kbs.co.kr/news24-02/news24-02_hd.m3u8'},
+  {id:'SBS', name:'SBS', group:'한국-지상파', logo:'https://backup.760515.xyz/logo/SBS.png', type:'hls', url:'https://tvlive.sbs.co.kr/sbsch6/sbsch61.stream/playlist.m3u8'},
+  {id:'SBS플러스', name:'SBS플러스', group:'한국-지상파', logo:'https://backup.760515.xyz/logo/SBS플러스.png', type:'hls', url:'https://tvlive.sbs.co.kr/sbspluspc/sbsplus1.stream/playlist.m3u8'},
+  {id:'SBS퍼니', name:'SBS퍼니', group:'한국-지상파', logo:'https://backup.760515.xyz/logo/SBS퍼니.png', type:'hls', url:'https://tvlive.sbs.co.kr/sbsetvpc/sbsetv1.stream/playlist.m3u8'},
+  {id:'SBS LIFE', name:'SBS LIFE', group:'한국-지상파', logo:'https://backup.760515.xyz/logo/SBS LIFE.png', type:'hls', url:'https://tvlive.sbs.co.kr/sbsfil/sbsfil1.stream/playlist.m3u8'},
+  {id:'SBS KPOP', name:'SBS KPOP', group:'한국-지상파', logo:'https://backup.760515.xyz/logo/SBS KPOP.png', type:'hls', url:'https://tvlive.sbs.co.kr/sbskpop/sbskpop1.stream/playlist.m3u8'},
+  {id:'SBS골프', name:'SBS골프', group:'한국-지상파', logo:'https://backup.760515.xyz/logo/SBS골프.png', type:'hls', url:'https://tvlive.sbs.co.kr/sbsgolf/sbsgolf1.stream/playlist.m3u8'},
+  {id:'SBS Golf2', name:'SBS Golf2', group:'한국-지상파', logo:'https://backup.760515.xyz/logo/SBS Golf2.png', type:'hls', url:'https://tvlive.sbs.co.kr/sbsgolf2/sbsgolf21.stream/playlist.m3u8'},
+  {id:'SBS스포츠', name:'SBS스포츠', group:'한국-지상파', logo:'https://backup.760515.xyz/logo/SBS스포츠.png', type:'hls', url:'https://tvlive.sbs.co.kr/sbsespn/sbsespn1.stream/playlist.m3u8'},
+  {id:'SBS Biz', name:'SBS Biz', group:'한국-지상파', logo:'https://backup.760515.xyz/logo/SBS Biz.png', type:'hls', url:'https://tvlive.sbs.co.kr/sbscnbc/sbscnbc1.stream/playlist.m3u8'},
+  {id:'MBC', name:'MBC', group:'한국-지상파', logo:'https://backup.760515.xyz/logo/MBC.png', type:'hls', url:'https://backup.760515.xyz/playlist/MBC-playlist.m3u8'},
+  {id:'MBC드라마넷', name:'MBC드라마넷', group:'한국-지상파', logo:'https://backup.760515.xyz/logo/MBC드라마넷.png', type:'hls', url:'https://dramaottsd.imbc.com/plus_drama_sd/definst/drama_sd.stream/chunklist.m3u8'},
+  {id:'MBC에브리원', name:'MBC에브리원', group:'한국-지상파', logo:'https://backup.760515.xyz/logo/MBC에브리원.png', type:'hls', url:'https://every1ottsd.imbc.com/plus_every1_sd/definst/every1_sd.stream/chunklist.m3u8'},
+  {id:'MBC M', name:'MBC M', group:'한국-지상파', logo:'https://backup.760515.xyz/logo/MBC M.png', type:'hls', url:'https://mbcmottsd.imbc.com/plus_mbcm_sd/definst/mbcm_sd.stream/chunklist.m3u8'},
+  {id:'MBC ON', name:'MBC ON', group:'한국-지상파', logo:'https://backup.760515.xyz/logo/MBC ON.png', type:'hls', url:'https://mbconottsd.imbc.com/plus_mbcon_sd/definst/mbcon_sd.stream/chunklist.m3u8'},
+  {id:'MBCNET', name:'MBCNET', group:'한국-지상파', logo:'https://backup.760515.xyz/logo/MBCNET.png', type:'hls', url:'https://m-mbcnetlive.imbc.com/mbcnet_onair/definst/mbcnet_500k.stream/chunklist.m3u8'},
 
-        // Elements
-        const videoElement = document.getElementById('video-player');
-        const placeholderElement = document.getElementById('player-placeholder');
-        const channelListElement = document.getElementById('channel-list');
-        const searchInputElement = document.getElementById('search-input');
-        const currentTitleElement = document.getElementById('current-title');
-        const currentUrlElement = document.getElementById('current-url');
-        const channelCountElement = document.getElementById('channel-count');
-        const btnReload = document.getElementById('btn-reload');
+  // 한국-기타
+  {id:'아리랑TV', name:'아리랑TV', group:'한국-기타', logo:'', type:'hls', url:'https://epg.pw/stream/f71b00bffdc25476502479870351e7f801879a9b7bbce6bc77332b7f8b0dbd7a.m3u8'},
+  {id:'TBSTV', name:'TBSTV', group:'한국-기타', logo:'', type:'hls', url:'https://cdntv.tbs.seoul.kr/tbs/tbs_tv_web.smil/playlist.m3u8'},
+  {id:'ABN', name:'ABN', group:'한국-기타', logo:'https://backup.760515.xyz/logo/ABN.png', type:'hls', url:'https://vod2.abn.co.kr/IPHONE/abn.m3u8'},
+  {id:'농협TV', name:'농협TV', group:'한국-기타', logo:'https://backup.760515.xyz/logo/농협TV.png', type:'hls', url:'http://nonghyup.flive.skcdn.com/nonghyup/definst/nhlive/playlist.m3u8'},
+  {id:'복지TV', name:'복지TV', group:'한국-기타', logo:'', type:'hls', url:'https://cdnlive179.smartucc.kr/smartlive/312/46324be24454bd98f785039457ac695d/playlist.m3u8'},
+  {id:'국민방송', name:'국민방송', group:'한국-기타', logo:'https://backup.760515.xyz/logo/국민방송.png', type:'hls', url:'https://mlive.ktv.go.kr/live/klive_m.stream/playlist.m3u8'},
+  {id:'문화유산채널', name:'문화유산채널', group:'한국-기타', logo:'https://backup.760515.xyz/logo/문화유산채널.png', type:'hls', url:'https://stream.ads.ottera.tv/playlist.m3u8?network_id=14'},
+  {id:'방송대학TV', name:'방송대학TV', group:'한국-기타', logo:'https://backup.760515.xyz/logo/방송대학TV.png', type:'hls', url:'https://live.knou.ac.kr/knou1/live1/playlist.m3u8'},
+  {id:'EBS1_기타', name:'EBS1', group:'한국-기타', logo:'https://backup.760515.xyz/logo/EBS1.png', type:'hls', url:'https://ebsonair.ebs.co.kr/ebs1familypc/familypc1m/playlist.m3u8'},
+  {id:'EBS2_기타', name:'EBS2', group:'한국-기타', logo:'https://backup.760515.xyz/logo/EBS2.png', type:'hls', url:'https://ebsonair.ebs.co.kr/ebs2familypc/familypc1m/playlist.m3u8'},
+  {id:'EBS+1', name:'EBS+1', group:'한국-기타', logo:'https://backup.760515.xyz/logo/EBS+1.png', type:'hls', url:'https://ebsonair.ebs.co.kr/plus1familypc/familypc1m/playlist.m3u8'},
+  {id:'EBS+2', name:'EBS+2', group:'한국-기타', logo:'https://backup.760515.xyz/logo/EBS+2.png', type:'hls', url:'https://ebsonair.ebs.co.kr/plus2familypc/familypc1m/playlist.m3u8'},
+  {id:'EBS English', name:'EBS English', group:'한국-기타', logo:'https://backup.760515.xyz/logo/EBS English.png', type:'hls', url:'https://ebsonair.ebs.co.kr/plus3familypc/familypc1m/playlist.m3u8'},
 
-        // Parse M3U Text
-        function parseM3U(data) {
-            const lines = data.split('\n');
-            const parsed = [];
-            let currentName = '';
+  // 한국-영화
+  {id:'한국영화1', name:'한국영화1', group:'한국-영화', logo:'', type:'hls', url:'https://stream.ads.ottera.tv/playlist.m3u8?network_id=595'},
+  {id:'한국영화2', name:'한국영화2', group:'한국-영화', logo:'', type:'hls', url:'https://stream.ads.ottera.tv/playlist.m3u8?network_id=743'},
+  {id:'한국영화3', name:'한국영화3', group:'한국-영화', logo:'', type:'hls', url:'https://stream.ads.ottera.tv/playlist.m3u8?network_id=742'}
+];
 
-            for (let i = 0; i < lines.length; i++) {
-                const line = lines[i].trim();
-                if (line.startsWith('#EXTINF:')) {
-                    const commaIdx = line.lastIndexOf(',');
-                    if (commaIdx !== -1) {
-                        currentName = line.substring(commaIdx + 1).trim();
-                    }
-                } else if (line && !line.startsWith('#')) {
-                    parsed.push({
-                        id: 'ch_' + parsed.length,
-                        name: currentName || `채널 ${parsed.length + 1}`,
-                        url: line
-                    });
-                    currentName = '';
-                }
-            }
-            return parsed;
+const DATA = [
+ {tab:'공중파',groups:[
+  {g:'KBS',note:'무료 SD',items:[
+   ['kbs1','KBS 1TV','kbs',KAPI('11'),'free'],['kbs2','KBS 2TV','kbs',KAPI('12'),'free'],
+   ['kbsw','KBS World','kbs',KAPI('14'),'free'],['kbsl','KBS Life','kbs',KAPI('N93'),'free'],
+   ['kbss','KBS Story','kbs',KAPI('N94'),'free'],['kbsk','KBS Kids','kbs',KAPI('N96'),'free']]},
+  {g:'MBC',note:'지역 MBC',items:[
+   ['tjmbc','대전MBC','hls','https://ns1.tjmbc.co.kr/live/myStream.sdp/playlist.m3u8','free'],
+   ['kjmbc','광주MBC','hls','https://media.kjmbc.co.kr/hls/live/stream/playlist.m3u8','free'],
+   ['chmbc','춘천MBC','hls','https://stream.chmbc.co.kr/TV/myStream/playlist.m3u8','free'],
+   ['ysmbc','여수MBC','hls','https://5c3639aa99149.streamlock.net/live_TV/tv/playlist.m3u8','free'],
+   ['mpmbc','목포MBC','hls','https://vod.mpmbc.co.kr/a_live/25246741/ch001/playlist.m3u8','free'],
+   ['jjmbc','제주MBC','hls','https://wowza.jejumbc.com/live/tv_jejumbc/playlist.m3u8','free']]},
+  {g:'SBS',note:'지역 민방',items:[
+   ['knn','KNN 부산경남','hls','https://stream1.knn.co.kr/hls/9ly4534y7dm2xfa123r2_tv/index.m3u8','free'],
+   ['kbc','KBC 광주','hls','https://vod.ikbc.co.kr/KBCTV/tv/playlist.m3u8','free'],
+   ['ubc','UBC 울산','hls','https://stream.ubc.co.kr/hls/ubctvstream/index.m3u8','free'],
+   ['tjb','TJB 대전','hls','https://vod.tjb.co.kr/live/_definst_/tv/playlist.m3u8','free'],
+   ['cjb','CJB 청주','hls','https://wowza1.cjb.co.kr/live/cjbtv/playlist.m3u8','free']]},
+  {g:'EBS',note:'직접 재생',items:[
+   ['ebs1','EBS 1TV','hls',EBS('groundwave'),'free'],['ebs2','EBS 2TV','hls',EBS('ebs2'),'free'],
+   ['ebsk','EBS Kids','hls',EBS('ebsu'),'free'],['ebsp1','EBS Plus 1','hls',EBS('plus1'),'free'],['ebsp2','EBS Plus 2','hls',EBS('plus2'),'free'],['ebse','EBS English','hls',EBS('plus3'),'free']]}]},
+ {tab:'뉴스',groups:[
+  {g:'24시간 뉴스',items:[
+   ['ytn','YTN','yt','UChlgI3UHCOnwUGzWzbJ3H5w','free','lpQTznAbLn0'],['ynh','연합뉴스TV','yt','UCTHCOPwqNfZ0uiKOvFyhGwg','free','ilvhUd2YgBI'],
+   ['kbsn','KBS 뉴스24','kbs',KAPI('81'),'free']]},
+  {g:'방송사 뉴스 라이브',note:'특보·속보 라이브는 자주 바뀜',items:[
+   ['mbcn','MBC 뉴스','yt','UCF4Wxdo3inmxP-Y59wXDsFw','free','m0wUTjsd7gw'],['sbsn','SBS 뉴스','yt','UCkinYTS9IHqOEwR1Sze2JTw','free','3n0ES_XiaPc'],
+   ['jtbcn','JTBC 뉴스','yt','UCsU-I-vHLiaMfV_ceaYz5rQ','free','fqQAD_noR9E'],['tvcn','TV조선 뉴스','yt','UCWlV3Lz_55UaX4JsMj-z__Q','free','ao8KmYncnw8']]},
+  {g:'공공',items:[
+   ['ktv','KTV 국민방송','hls','https://hlive.ktv.go.kr/live/klive_h.stream/playlist.m3u8','free']]}]}
+];
+
+function setupM3uData() {
+  const groupsMap = {};
+  M3U_ITEMS.forEach(item => {
+    if (!groupsMap[item.group]) {
+      groupsMap[item.group] = [];
+    }
+    groupsMap[item.group].push([
+      item.id,
+      item.name,
+      item.type,
+      item.url,
+      'free',
+      item.logo
+    ]);
+  });
+
+  for (const [gName, items] of Object.entries(groupsMap)) {
+    let tabName = '한국 TV';
+    if (gName.includes('지상파')) tabName = '한국-지상파';
+    else if (gName.includes('종합편성')) tabName = '한국-종합편성';
+    else if (gName.includes('영화')) tabName = '한국-영화';
+    else if (gName.includes('기타')) tabName = '한국-기타';
+
+    let targetTab = DATA.find(t => t.tab === tabName);
+    if (!targetTab) {
+      targetTab = { tab: tabName, groups: [] };
+      DATA.push(targetTab);
+    }
+
+    let targetGroup = targetTab.groups.find(g => g.g === gName);
+    if (!targetGroup) {
+      targetGroup = { g: gName, items: [] };
+      targetTab.groups.push(targetGroup);
+    }
+
+    targetGroup.items.push(...items);
+  }
+}
+
+setupM3uData();
+
+let curTab = DATA[0].tab;
+let curCh = null;
+let hlsInst = null;
+let favs = JSON.parse(localStorage.getItem('mw_favs') || '[]');
+
+const $ = id => document.getElementById(id);
+
+function initClock() {
+  const update = () => {
+    const d = new Date();
+    $('clock').textContent = d.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric', weekday: 'short' }) + ' ' + d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+  };
+  update();
+  setInterval(update, 1000);
+}
+
+function initTabs() {
+  const tabsNav = $('tabs');
+  tabsNav.innerHTML = '';
+  DATA.forEach(t => {
+    const btn = document.createElement('button');
+    btn.className = 'tab' + (t.tab === curTab ? ' on' : '');
+    btn.textContent = t.tab;
+    btn.onclick = () => {
+      curTab = t.tab;
+      document.querySelectorAll('.tab').forEach(b => b.classList.remove('on'));
+      btn.classList.add('on');
+      renderList();
+    };
+    tabsNav.appendChild(btn);
+  });
+}
+
+function showToast(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+function toggleFav(id) {
+  if (favs.includes(id)) {
+    favs = favs.filter(x => x !== id);
+    showToast('즐겨찾기에서 해제되었습니다.');
+  } else {
+    favs.push(id);
+    showToast('즐겨찾기에 추가되었습니다.');
+  }
+  localStorage.setItem('mw_favs', JSON.stringify(favs));
+  renderList();
+  if (curCh && curCh.id === id) updateFavBtn();
+}
+
+function updateFavBtn() {
+  const isFav = curCh && favs.includes(curCh.id);
+  $('pFav').textContent = isFav ? '★ 즐겨찾기' : '☆ 즐겨찾기';
+  if (isFav) $('pFav').classList.add('on');
+  else $('pFav').classList.remove('on');
+}
+
+async function playChannel(ch) {
+  curCh = ch;
+  $('pcol').hidden = false;
+  $('layout').classList.add('has-player');
+  $('pName').textContent = ch.name;
+  $('pSub').textContent = ch.group || '';
+  updateFavBtn();
+
+  const vid = $('vid');
+  const frm = $('frm');
+  const ph = $('ph');
+
+  vid.hidden = true;
+  frm.hidden = true;
+  ph.hidden = false;
+  ph.innerHTML = '<div class="spin"></div><h4>채널 로딩 중...</h4>';
+
+  if (hlsInst) {
+    hlsInst.destroy();
+    hlsInst = null;
+  }
+  vid.pause();
+  vid.src = '';
+  frm.src = '';
+
+  let playUrl = ch.url;
+
+  if (ch.type === 'kbs') {
+    try {
+      const res = await fetch(ch.url);
+      const json = await res.json();
+      if (json && json.channel_item && json.channel_item[0] && json.channel_item[0].service_url) {
+        playUrl = json.channel_item[0].service_url;
+      }
+    } catch (e) {
+      ph.innerHTML = '<h4>재생 실패</h4><p>KBS 스트림 주소를 가져오지 못했습니다.</p>';
+      return;
+    }
+  }
+
+  if (ch.type === 'yt') {
+    ph.hidden = true;
+    frm.hidden = false;
+    frm.src = `https://www.youtube.com/embed/live_stream?channel=${ch.url}&autoplay=1`;
+  } else {
+    ph.hidden = true;
+    vid.hidden = false;
+    if (Hls.isSupported()) {
+      hlsInst = new Hls({ enableWorker: true });
+      hlsInst.loadSource(playUrl);
+      hlsInst.attachMedia(vid);
+      hlsInst.on(Hls.Events.MANIFEST_PARSED, () => {
+        vid.play().catch(() => {});
+      });
+      hlsInst.on(Hls.Events.ERROR, (event, data) => {
+        if (data.fatal) {
+          ph.hidden = false;
+          vid.hidden = true;
+          ph.innerHTML = '<h4>재생 오류</h4><p>스트림을 재생할 수 없습니다.</p>';
         }
+      });
+    } else if (vid.canPlayType('application/vnd.apple.mpegurl')) {
+      vid.src = playUrl;
+      vid.play().catch(() => {});
+    } else {
+      ph.hidden = false;
+      vid.hidden = true;
+      ph.innerHTML = '<h4>재생 불가</h4><p>이 브라우저는 HLS 재생을 지원하지 않습니다.</p>';
+    }
+  }
+  renderList();
+}
 
-        // Render Channels
-        function renderChannels(filter = '') {
-            channelListElement.innerHTML = '';
-            const filtered = channels.filter(ch => ch.name.toLowerCase().includes(filter.toLowerCase()));
+function closePlayer() {
+  if (hlsInst) {
+    hlsInst.destroy();
+    hlsInst = null;
+  }
+  const vid = $('vid');
+  vid.pause();
+  vid.src = '';
+  $('frm').src = '';
+  $('pcol').hidden = true;
+  $('layout').classList.remove('has-player');
+  curCh = null;
+  renderList();
+}
 
-            filtered.forEach(ch => {
-                const isSelected = currentChannel && currentChannel.id === ch.id;
-                const item = document.createElement('button');
-                item.className = `w-full text-left px-4 py-3 rounded-xl flex items-center justify-between transition group ${
-                    isSelected ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30' : 'bg-slate-950/40 hover:bg-slate-800 text-slate-300'
-                }`;
+function renderList() {
+  const list = $('list');
+  const query = $('q').value.trim().toLowerCase();
+  list.innerHTML = '';
 
-                item.innerHTML = `
-                    <div class="flex items-center space-x-3 overflow-hidden">
-                        <i class="fa-solid ${isSelected ? 'fa-circle-play text-indigo-400' : 'fa-tv text-slate-600 group-hover:text-slate-400'} text-sm"></i>
-                        <span class="font-medium text-sm truncate">${ch.name}</span>
-                    </div>
-                    <i class="fa-solid fa-chevron-right text-xs text-slate-600 opacity-0 group-hover:opacity-100 transition"></i>
-                `;
+  let allChannels = [];
+  DATA.forEach(t => {
+    if (curTab === '즐겨찾기' || t.tab === curTab) {
+      t.groups.forEach(g => {
+        g.items.forEach(item => {
+          allChannels.push({
+            id: item[0],
+            name: item[1],
+            type: item[2],
+            url: item[3],
+            status: item[4],
+            logo: item[5] || '',
+            group: g.g,
+            tab: t.tab
+          });
+        });
+      });
+    }
+  });
 
-                item.onclick = () => playChannel(ch);
-                channelListElement.appendChild(item);
+  if (curTab === '즐겨찾기') {
+    allChannels = [];
+    DATA.forEach(t => {
+      t.groups.forEach(g => {
+        g.items.forEach(item => {
+          if (favs.includes(item[0])) {
+            allChannels.push({
+              id: item[0],
+              name: item[1],
+              type: item[2],
+              url: item[3],
+              status: item[4],
+              logo: item[5] || '',
+              group: g.g,
+              tab: t.tab
             });
-        }
-
-        // Play Channel Stream
-        function playChannel(channel) {
-            currentChannel = channel;
-            placeholderElement.classList.add('hidden');
-            currentTitleElement.textContent = channel.name;
-            currentUrlElement.textContent = channel.url;
-
-            if (Hls.isSupported()) {
-                if (hlsPlayer) {
-                    hlsPlayer.destroy();
-                }
-                hlsPlayer = new Hls();
-                hlsPlayer.loadSource(channel.url);
-                hlsPlayer.attachMedia(videoElement);
-                hlsPlayer.on(Hls.Events.MANIFEST_PARSED, () => {
-                    videoElement.play().catch(() => {});
-                });
-            } else if (videoElement.canPlayType('application/vnd.apple.mpegurl')) {
-                videoElement.src = channel.url;
-                videoElement.play().catch(() => {});
-            }
-
-            renderChannels(searchInputElement.value);
-        }
-
-        // Event Listeners
-        searchInputElement.addEventListener('input', (e) => renderChannels(e.target.value));
-        btnReload.addEventListener('click', () => {
-            if (currentChannel) playChannel(currentChannel);
+          }
         });
+      });
+    });
+  }
 
-        // Initialize App
-        window.addEventListener('DOMContentLoaded', () => {
-            channels = parseM3U(playlistRaw);
-            channelCountElement.textContent = `총 ${channels.length}개 채널`;
-            renderChannels();
-        });
-    </script>
+  if (query) {
+    allChannels = allChannels.filter(c => c.name.toLowerCase().includes(query) || c.group.toLowerCase().includes(query));
+  }
+
+  if (allChannels.length === 0) {
+    list.innerHTML = '<div class="empty">채널이 없습니다.</div>';
+    return;
+  }
+
+  const groups = {};
+  allChannels.forEach(c => {
+    if (!groups[c.group]) groups[c.group] = [];
+    groups[c.group].push(c);
+  });
+
+  for (const [gName, chs] of Object.entries(groups)) {
+    const gDiv = document.createElement('div');
+    gDiv.className = 'group';
+
+    const gHead = document.createElement('div');
+    gHead.className = 'g-head';
+    gHead.innerHTML = `<h3>${gName}</h3><span>(${chs.length})</span>`;
+    gDiv.appendChild(gHead);
+
+    const grid = document.createElement('div');
+    grid.className = 'grid';
+
+    chs.forEach(ch => {
+      const isSelected = curCh && curCh.id === ch.id;
+      const isFav = favs.includes(ch.id);
+      const card = document.createElement('button');
+      card.className = 'ch' + (isSelected ? ' on' : '');
+
+      let logoImg = ch.logo ? `<img src="${ch.logo}" alt="" onerror="this.style.display='none'">` : '';
+
+      card.innerHTML = `
+        <div class="ch-top">
+          ${logoImg}
+          <div class="ch-n">${ch.name}</div>
+        </div>
+        <div class="ch-m">
+          <span class="bd s-free">FREE</span>
+          <span class="bd t-${ch.type === 'yt' ? 'yt' : 'hls'}">${ch.type.toUpperCase()}</span>
+        </div>
+        ${isFav ? '<span class="star">★</span>' : ''}
+      `;
+
+      card.onclick = () => playChannel(ch);
+      grid.appendChild(card);
+    });
+
+    gDiv.appendChild(grid);
+    list.appendChild(gDiv);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (!window.Hls) {
+    $('cdnBanner').hidden = false;
+  }
+  initClock();
+  initTabs();
+  renderList();
+
+  $('q').addEventListener('input', renderList);
+
+  $('favTop').onclick = () => {
+    curTab = '즐겨찾기';
+    document.querySelectorAll('.tab').forEach(b => b.classList.remove('on'));
+    renderList();
+  };
+
+  $('pClose').onclick = closePlayer;
+
+  $('pFav').onclick = () => {
+    if (curCh) toggleFav(curCh.id);
+  };
+
+  $('pMute').onclick = () => {
+    const vid = $('vid');
+    vid.muted = !vid.muted;
+    $('pMute').textContent = vid.muted ? '🔇 음소거' : '🔊 소리';
+  };
+
+  $('pFull').onclick = () => {
+    const vid = $('vid');
+    if (vid.requestFullscreen) vid.requestFullscreen();
+    else if (vid.webkitRequestFullscreen) vid.webkitRequestFullscreen();
+  };
+});
+</script>
 </body>
 </html>
