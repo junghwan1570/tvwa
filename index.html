@@ -396,6 +396,8 @@ const M3U_SRCS = [
   'https://cdn.jsdelivr.net/gh/junghwan1570/kr-iptv@main/kr.m3u'
 ];
 const M3U_TTL = 60 * 60 * 1000; // 1시간마다 새로 확인
+// 영상 암호 키를 KBS 로그인 세션에만 내줘서(키 요청 403) 검은 화면만 나오는 채널: KBS드라마, KBS조이
+const M3U_BLOCK = /\/\/(kbsndrama|kbsnjoy)\.gscdn\.kbs\.co\.kr\//;
 function parseKrM3u(text){
   if (!/^﻿?#EXTM3U/.test(text.trim())) throw new Error('M3U 형식이 아닙니다');
   const out = []; let inf = null;
@@ -497,7 +499,7 @@ function setupM3uData(list) {
   DATA.forEach(t => { t.groups = t.groups.filter(g => !g.m3u); });
   for (let i = DATA.length - 1; i >= 0; i--) if (DATA[i].m3u && !DATA[i].groups.length) DATA.splice(i, 1);
   const groupsMap = {};
-  list.forEach(item => {
+  list.filter(item => !M3U_BLOCK.test(item.url)).forEach(item => {
     if (!groupsMap[item.group]) {
       groupsMap[item.group] = [];
     }
