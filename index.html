@@ -112,6 +112,25 @@ button{cursor:pointer;background:none;border:0;-webkit-tap-highlight-color:trans
 .row.on .r-prog b{color:var(--acc)}
 @media(min-width:1300px){.r-body{display:grid;grid-template-columns:minmax(120px,.9fr) minmax(0,1.6fr);align-items:center;gap:14px}.r-prog{margin:0}}
 
+/* 유튜브 인기 */
+.ytcats{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.ytcats::-webkit-scrollbar{display:none}
+.ytcat{flex:none;min-height:42px;padding:0 16px;border-radius:999px;background:var(--card);border:1px solid var(--bdr);color:var(--tx2);font-size:15px}
+.ytcat.on{background:var(--card2);border-color:var(--acc);color:var(--acc);font-weight:700}
+.vrow{display:flex;gap:14px;align-items:center;width:100%;background:var(--card);border:1px solid var(--bdr);border-radius:18px;padding:10px;text-align:left;content-visibility:auto;contain-intrinsic-size:auto 108px}
+.vrow:active{background:var(--card2)}
+.vrow.on{border-color:var(--acc);background:var(--acc-d)}
+.v-th{position:relative;width:160px;flex:none;aspect-ratio:16/9;border-radius:12px;overflow:hidden;background:#000}
+.v-th img{width:100%;height:100%;object-fit:cover;display:block}
+.v-th b{position:absolute;right:6px;bottom:6px;background:rgba(0,0,0,.82);color:#fff;font-size:12px;font-weight:700;padding:2px 6px;border-radius:6px;font-variant-numeric:tabular-nums}
+.v-th b.live{background:#e5332a}
+.v-rank{position:absolute;left:6px;top:6px;background:rgba(0,0,0,.82);color:var(--acc);font-size:13px;font-weight:900;padding:1px 7px;border-radius:6px}
+.v-body{flex:1;min-width:0}
+.v-title{font-size:17px;font-weight:700;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.vrow.on .v-title{color:var(--acc)}
+.v-meta{font-size:13px;color:var(--tx3);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:640px){.v-th{width:128px}.v-title{font-size:15px}}
+
 /* 편성표 */
 .gwrap{display:grid;gap:10px}
 .gnote{font-size:13px;color:var(--tx3)}
@@ -458,6 +477,10 @@ const nowSec = () => Date.now() / 1000;
 let ALL = [];
 
 const FAV = '★ 즐겨찾기';
+const YT = '▶ 유튜브 인기';
+const YT_CATS = [['0', '전체'], ['10', '음악'], ['24', '엔터'], ['23', '코미디'], ['20', '게임'], ['17', '스포츠'], ['25', '뉴스'], ['22', '인물·블로그']];
+let ytCat = store.get('mw_ytcat', '0'), ytItems = [], ytState = '', ytErr = '';
+const ytMem = {};
 let view = 'live', chip = '전체', query = '';
 let shown = [];
 let cur = null, hls = null;
@@ -488,6 +511,7 @@ function progsOf(c){
   return epgIdx[n] || epgIdx[n.replace(/1$/, '')] || epgIdx[n + '1'] || null;
 }
 function nowNext(c){
+  if (c.type === 'ytv') return [null, null];
   const ps = progsOf(c); if (!ps) return [null, null];
   const t = nowSec();
   const i = ps.findIndex(p => p[0] <= t && t < p[1]);
@@ -580,6 +604,7 @@ ALL = buildChannels();
 
 // ───────── 목록 ─────────
 function filtered(){
+  if (chip === YT) return [];
   let a = chip === FAV ? ALL.filter(c => favs.includes(c.id)) : (chip === '전체' ? ALL : ALL.filter(c => c.tab === chip));
   if (query) a = a.filter(c => {
     const [p] = nowNext(c);
@@ -588,7 +613,7 @@ function filtered(){
   return a;
 }
 function chipsHTML(){
-  return ['전체', FAV, ...TABS.filter(t => ALL.some(c => c.tab === t))].map(t => `<button class="chip${t === chip ? ' on' : ''}" data-t="${esc(t)}">${esc(t)}</button>`).join('');
+  return ['전체', FAV, YT, ...TABS.filter(t => ALL.some(c => c.tab === t))].map(t => `<button class="chip${t === chip ? ' on' : ''}" data-t="${esc(t)}">${esc(t)}</button>`).join('');
 }
 function renderChips(){ $('chips').innerHTML = chipsHTML(); $('gchips').innerHTML = chipsHTML(); }
 function logoHTML(c){
@@ -606,6 +631,7 @@ function updateRowProgs(){
   document.querySelectorAll('#list .row').forEach(r => { const c = byId.get(r.dataset.id); const box = r.querySelector('.r-progs'); if (c && box) { const h = progsHTML(c); if (box.innerHTML !== h) box.innerHTML = h; } });
 }
 function renderList(){
+  if (chip === YT) return renderYt();
   shown = filtered();
   $('ovCount').textContent = `${chip} · ${shown.length}개 채널`;
   if (!shown.length) {
@@ -624,8 +650,54 @@ function renderList(){
     </div>`;
   }).join('');
 }
+function fmtViews(n){
+  if (n >= 1e8) return (n / 1e8).toFixed(1).replace(/\.0$/, '') + '억회';
+  if (n >= 1e4) return Math.round(n / 1e4) + '만회';
+  if (n >= 1e3) return (n / 1e3).toFixed(1).replace(/\.0$/, '') + '천회';
+  return n + '회';
+}
+function ago(iso){
+  const h = (Date.now() - Date.parse(iso)) / 36e5;
+  return h < 1 ? '방금' : h < 24 ? Math.floor(h) + '시간 전' : Math.floor(h / 24) + '일 전';
+}
+async function loadYt(force){
+  const m = ytMem[ytCat];
+  if (!force && m && Date.now() - m.t < 10 * 60e3) { ytItems = m.items; ytState = 'ok'; return; }
+  if (!TOKEN_PROXY) { ytState = 'err'; ytErr = '설정에서 중계 서버(NAS) 주소를 넣어야 볼 수 있습니다.'; return; }
+  ytState = 'loading';
+  try {
+    const r = await fetch(`${TOKEN_PROXY}?yt=popular&cat=${ytCat}`);
+    const j = await r.json();
+    if (!r.ok || j.error) throw new Error(j.error || ('HTTP ' + r.status));
+    ytItems = j.items || []; ytMem[ytCat] = { t: Date.now(), items: ytItems }; ytState = 'ok';
+  } catch (e) {
+    ytState = 'err';
+    ytErr = /YT_API_KEY/.test(e.message) ? 'NAS의 docker-compose.yml에 YouTube API 키(YT_API_KEY)를 넣고 컨테이너를 다시 시작하세요.' : '인기 영상을 불러오지 못했습니다: ' + e.message;
+  }
+}
+function renderYt(){
+  shown = [];
+  const cats = `<div class="ytcats">${YT_CATS.map(([id, n]) => `<button class="ytcat${id === ytCat ? ' on' : ''}" data-ytcat="${id}">${n}</button>`).join('')}</div>`;
+  $('ovCount').textContent = `유튜브 인기 · ${ytState === 'ok' ? ytItems.length + '개 영상' : '불러오는 중'}`;
+  if (ytState !== 'ok') {
+    $('list').innerHTML = cats + `<div class="empty">${ytState === 'err' ? esc(ytErr) : '인기 영상을 불러오는 중…'}</div>`;
+    if (!ytState) loadYt(false).then(() => chip === YT && renderYt());
+    return;
+  }
+  let items = ytItems;
+  if (query) items = items.filter(v => (v.title + ' ' + v.channel).toLowerCase().includes(query));
+  $('list').innerHTML = cats + (items.length ? items.map(v => `
+    <div class="vrow${cur && cur.id === 'yt:' + v.id ? ' on' : ''}" data-yt="${esc(v.id)}" role="button" tabindex="0">
+      <span class="v-th"><img src="${esc(v.thumb)}" alt="" loading="lazy"><i class="v-rank">${ytItems.indexOf(v) + 1}</i><b class="${v.live ? 'live' : ''}">${v.live ? 'LIVE' : esc(v.dur)}</b></span>
+      <span class="v-body"><span class="v-title">${esc(v.title)}</span><span class="v-meta" style="display:block">${esc(v.channel)} · ${fmtViews(v.views)} · ${ago(v.at)}</span></span>
+    </div>`).join('') : '<div class="empty">검색 결과가 없습니다.</div>');
+}
+function ytChannel(v){
+  return { id: 'yt:' + v.id, ids: ['yt:' + v.id], name: v.title, logo: v.thumb, group: `${v.channel} · ${fmtViews(v.views)}`, tab: YT, type: 'ytv', url: v.id, sources: [{ type: 'ytv', url: v.id }] };
+}
 function markCurrent(){
   document.querySelectorAll('.row').forEach(r => r.classList.toggle('on', !!cur && r.dataset.id === cur.id));
+  document.querySelectorAll('.vrow').forEach(r => r.classList.toggle('on', !!cur && 'yt:' + r.dataset.yt === cur.id));
 }
 function toggleFav(id){
   favs = favs.includes(id) ? favs.filter(x => x !== id) : [...favs, id];
@@ -641,9 +713,13 @@ function updateNow(){
   $('nName').textContent = c ? c.name : '명왕사신TV';
   $('nDot').className = 'dot' + (c ? ' live' : '');
   const [p, n] = c ? nowNext(c) : [null, null];
-  $('nNow').textContent = !c ? '목록에서 채널을 고르세요' : p ? `${hm(p[0])}-${hm(p[1])}  ${p[2]}` : `실시간 · ${c.group}`;
+  $('nNow').textContent = !c ? '목록에서 채널을 고르세요' : c.type === 'ytv' ? c.group : p ? `${hm(p[0])}-${hm(p[1])}  ${p[2]}` : `실시간 · ${c.group}`;
   if (n) $('nNext').textContent = `${hm(n[0])}-${hm(n[1])}  ${n[2]}`;
-  else {
+  else if (c && c.type === 'ytv') {
+    const i = ytItems.findIndex(v => 'yt:' + v.id === c.id);
+    const nx = i >= 0 ? ytItems[(i + 1) % ytItems.length] : null;
+    $('nNext').textContent = nx ? `다음 영상  ${nx.title}` : '';
+  } else {
     const i = c ? shown.findIndex(x => x.id === c.id) : -1;
     const nx = i >= 0 && shown.length > 1 ? shown[(i + 1) % shown.length] : null;
     $('nNext').textContent = nx ? `다음 채널  ${nx.name}` : '';
@@ -711,7 +787,7 @@ function showErr(title, msg){
   $('skip').onclick = () => step(1);
 }
 function setQ(h){
-  $('ovName').textContent = cur ? [cur.name, 'LIVE', h ? h + 'p' : ''].filter(Boolean).join(' · ') : '채널을 선택하세요';
+  $('ovName').textContent = cur ? (cur.type === 'ytv' ? 'YouTube · ' + cur.name : [cur.name, 'LIVE', h ? h + 'p' : ''].filter(Boolean).join(' · ')) : '채널을 선택하세요';
 }
 function stop(){
   if (hls) { hls.destroy(); hls = null; }
@@ -737,17 +813,19 @@ async function play(c){
 function playSrc(c, si, log){
   if (cur !== c) return;
   const s = c.sources[si];
-  $('bPause').parentElement.hidden = s && s.type === 'yt';
+  $('bPause').parentElement.hidden = s && /^yt/.test(s.type);
   if (!s) {
     const all403 = log.length && log.every(l => /403|401|거부/.test(l));
     const head = all403 ? '방송사가 접근을 거부했습니다. 국내 IP나 방송사 자체 사이트에서만 재생을 허용하는 채널로 보입니다.' : '이 채널을 재생할 방법을 찾지 못했습니다.';
     return showErr('재생 오류', head + '<br><small>' + log.map(esc).join('<br>') + '</small>');
   }
   if (si > 0) phShow(`<div class="spin"></div><h4>다른 방송 출처로 연결 중… (${si + 1}/${c.sources.length})</h4>`);
-  if (s.type === 'yt') {
+  if (s.type === 'yt' || s.type === 'ytv') {
     if (hls) { hls.destroy(); hls = null; }
     vid.hidden = true; frm.hidden = false; phHide();
-    frm.src = `https://www.youtube.com/embed/live_stream?channel=${encodeURIComponent(s.url)}&autoplay=1&playsinline=1`;
+    frm.src = s.type === 'ytv'
+      ? `https://www.youtube-nocookie.com/embed/${encodeURIComponent(s.url)}?autoplay=1&playsinline=1&rel=0`
+      : `https://www.youtube.com/embed/live_stream?channel=${encodeURIComponent(s.url)}&autoplay=1&playsinline=1`;
     return;
   }
   tryMode(c, s, si, modesFor(s), 0, log);
@@ -808,6 +886,12 @@ function syncPause(){
   $('icPause').innerHTML = vid.paused ? '<path d="M7 4l13 8-13 8z"/>' : '<rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/>';
 }
 function step(n){
+  if (cur && cur.type === 'ytv' && ytItems.length) {
+    const i = ytItems.findIndex(v => 'yt:' + v.id === cur.id);
+    const v = ytItems[((i < 0 ? 0 : i + n) % ytItems.length + ytItems.length) % ytItems.length];
+    if (v) play(ytChannel(v));
+    return;
+  }
   const list = shown.length ? shown : ALL;
   const i = cur ? list.findIndex(x => x.id === cur.id) : -1;
   const c = list[((i < 0 ? 0 : i + n) % list.length + list.length) % list.length];
@@ -862,6 +946,10 @@ function chipClick(e){
 $('chips').onclick = chipClick;
 $('gchips').onclick = chipClick;
 $('list').onclick = e => {
+  const yc = e.target.closest('[data-ytcat]');
+  if (yc) { ytCat = yc.dataset.ytcat; store.set('mw_ytcat', ytCat); ytState = ''; renderYt(); return; }
+  const yv = e.target.closest('[data-yt]');
+  if (yv) { const v = ytItems.find(x => x.id === yv.dataset.yt); if (v) { play(ytChannel(v)); if (window.innerWidth < 1000) window.scrollTo({ top: 0, behavior: 'smooth' }); } return; }
   const f = e.target.closest('[data-fav]'); if (f) { e.stopPropagation(); return toggleFav(f.dataset.fav); }
   const r = e.target.closest('.row'); if (!r) return;
   const c = ALL.find(x => x.id === r.dataset.id); if (c) { play(c); if (window.innerWidth < 1000) window.scrollTo({ top: 0, behavior: 'smooth' }); }
