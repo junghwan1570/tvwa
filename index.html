@@ -52,14 +52,14 @@ button{cursor:pointer;background:none;border:0;-webkit-tap-highlight-color:trans
 .player.idle .ov{opacity:0;pointer-events:none}
 .player.msg .ov-tl,.player.msg .ov-bc,.player.msg .ov-bl{display:none}
 .ov-tl{top:16px;left:16px;display:flex;flex-direction:column;align-items:flex-start;gap:8px;max-width:calc(100% - 32px)}
-.chip-ov{background:rgba(10,14,20,.72);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-radius:14px;padding:8px 14px;font-weight:700;font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.chip-ov{background:rgba(10,14,20,.86);border-radius:14px;padding:8px 14px;font-weight:700;font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .chip-ov.sm{font-weight:500;font-size:14px;padding:6px 12px;border-radius:12px}
 .ov-bl{left:16px;bottom:16px}.ov-br{right:16px;bottom:16px}
 .ov-bc{left:50%;bottom:16px;transform:translateX(-50%);display:flex;gap:10px}
-.cbtn{width:56px;height:56px;border-radius:18px;background:rgba(10,14,20,.72);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.12);display:grid;place-items:center}
+.cbtn{width:56px;height:56px;border-radius:18px;background:rgba(10,14,20,.86);border:1px solid rgba(255,255,255,.12);display:grid;place-items:center}
 .cbtn svg{width:24px;height:24px;fill:currentColor}
 .cbtn.st svg{fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}
-.pill{min-width:100px;height:52px;padding:0 20px;border-radius:999px;background:rgba(10,14,20,.72);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.12);font-weight:700;font-size:16px;white-space:nowrap}
+.pill{min-width:100px;height:52px;padding:0 20px;border-radius:999px;background:rgba(10,14,20,.86);border:1px solid rgba(255,255,255,.12);font-weight:700;font-size:16px;white-space:nowrap}
 .pill:active,.cbtn:active{background:var(--acc);color:#10180a}
 
 /* 현재 채널 카드 */
@@ -76,7 +76,7 @@ button{cursor:pointer;background:none;border:0;-webkit-tap-highlight-color:trans
 .dot.live{background:var(--red);box-shadow:0 0 0 4px rgba(255,90,90,.2)}
 .dot.o{background:none;border:2px solid var(--tx3)}
 .bar{height:5px;border-radius:3px;background:#24331a;margin:10px 0 8px;overflow:hidden}
-.bar i{display:block;height:100%;width:0;background:var(--acc);transition:width .5s}
+.bar i{display:block;height:100%;width:0;background:var(--acc)}
 .n-line.sub{font-size:16px;font-weight:500;color:var(--tx2);margin-top:0}
 
 /* 카테고리 칩 */
@@ -87,7 +87,7 @@ button{cursor:pointer;background:none;border:0;-webkit-tap-highlight-color:trans
 
 /* 채널 목록 */
 .list{display:grid;gap:10px;margin-top:12px;grid-template-columns:minmax(0,1fr)}
-.row{display:flex;align-items:center;gap:14px;width:100%;background:var(--card);border:1px solid var(--bdr);border-radius:18px;padding:14px 14px 14px 18px;text-align:left;min-height:84px}
+.row{content-visibility:auto;contain-intrinsic-size:auto 84px;display:flex;align-items:center;gap:14px;width:100%;background:var(--card);border:1px solid var(--bdr);border-radius:18px;padding:14px 14px 14px 18px;text-align:left;min-height:84px}
 .row:active{background:var(--card2)}
 .row.on{border-color:var(--acc);background:var(--acc-d)}
 .r-no{width:30px;flex:none;color:var(--tx3);font-size:17px;font-variant-numeric:tabular-nums}
@@ -119,7 +119,7 @@ button{cursor:pointer;background:none;border:0;-webkit-tap-highlight-color:trans
 .g-in{position:relative}
 .g-ruler{position:sticky;top:0;z-index:3;height:38px;background:#101722;border-bottom:1px solid var(--bdr)}
 .g-ruler span{position:absolute;top:0;height:38px;line-height:38px;padding-left:8px;font-size:13px;color:var(--tx2);border-left:1px solid var(--bdr);font-variant-numeric:tabular-nums}
-.g-row{position:relative;height:68px;border-bottom:1px solid var(--bdr)}
+.g-row{content-visibility:auto;contain-intrinsic-size:auto 68px;position:relative;height:68px;border-bottom:1px solid var(--bdr)}
 .g-ch{position:sticky;left:0;z-index:2;width:var(--chw,150px);height:100%;display:flex;align-items:center;gap:8px;padding:0 10px;background:#121a26;border-right:1px solid var(--bdr);font-weight:700;font-size:15px;text-align:left}
 .g-ch img{width:36px;height:24px;object-fit:contain;flex:none}
 .g-ch span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -532,6 +532,14 @@ function logoHTML(c){
 function progLine(p, nx){
   return p ? `<span class="r-prog${nx ? ' nx' : ''}"><b>${hm(p[0])}-${hm(p[1])}</b>${esc(p[2])}</span>` : '';
 }
+function progsHTML(c){
+  const [p, n] = nowNext(c);
+  return p || n ? progLine(p) + progLine(n, true) : `<span class="r-sub" style="display:block">${esc(c.group)}</span>`;
+}
+function updateRowProgs(){
+  const byId = new Map(ALL.map(c => [c.id, c]));
+  document.querySelectorAll('#list .row').forEach(r => { const c = byId.get(r.dataset.id); const box = r.querySelector('.r-progs'); if (c && box) { const h = progsHTML(c); if (box.innerHTML !== h) box.innerHTML = h; } });
+}
 function renderList(){
   shown = filtered();
   $('ovCount').textContent = `${chip} · ${shown.length}개 채널`;
@@ -540,8 +548,7 @@ function renderList(){
     return;
   }
   $('list').innerHTML = shown.map((c, i) => {
-    const [p, n] = nowNext(c);
-    const progs = p || n ? `<span style="display:block;min-width:0">${progLine(p)}${progLine(n, true)}</span>` : `<span class="r-sub" style="display:block">${esc(c.group)}</span>`;
+    const progs = `<span class="r-progs" style="display:block;min-width:0">${progsHTML(c)}</span>`;
     return `
     <div class="row${cur && cur.id === c.id ? ' on' : ''}" data-id="${esc(c.id)}" role="button" tabindex="0">
       <span class="r-no">${String(i + 1).padStart(2, '0')}</span>
@@ -588,7 +595,7 @@ function tick(){
   if (d.getMinutes() !== lastMin) { if (lastMin !== -1) refreshAll(); lastMin = d.getMinutes(); }
 }
 function refreshAll(){
-  if (view === 'live') { renderList(); updateNow(); }
+  if (view === 'live') { if (query) renderList(); else updateRowProgs(); updateNow(); }
   else if (view === 'guide') renderGuide(false);
   else updateSettings();
 }
@@ -701,7 +708,7 @@ function startHls(url, c, direct, ok, fail){
     return showErr('재생 불가', '이 브라우저는 HLS 재생을 지원하지 않습니다.');
   }
   let settled = false;
-  hls = new Hls({ enableWorker: true, manifestLoadingMaxRetry: 1, levelLoadingMaxRetry: 1 });
+  hls = new Hls({ enableWorker: true, manifestLoadingMaxRetry: 1, levelLoadingMaxRetry: 1, maxBufferLength: 20, maxMaxBufferLength: 30, backBufferLength: 10 });
   hls.loadSource(url);
   hls.attachMedia(vid);
   hls.on(Hls.Events.MANIFEST_PARSED, () => {
