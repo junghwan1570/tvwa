@@ -277,7 +277,7 @@ async function resolveUrl(ch, viaProxy){
     return u;
   }
   if(ch.type === 'sbs'){
-    const u = pickM3u8(await getText(`https://apis.sbs.co.kr/play-api/1.0/livestream/${ch.url}/info?protocol=hls&ssl=Y`, viaProxy));
+    const u = pickM3u8(await getText(`https://apis.sbs.co.kr/play-api/1.0/livestream/${ch.url}?protocol=hls&ssl=Y`, viaProxy));
     if(!u) throw new Error('SBS 재생 주소(토큰)를 받지 못했습니다.');
     return u;
   }
@@ -331,15 +331,15 @@ const M3U_ITEMS = [
   {id:'KBS Story', name:'KBS Story', group:'한국-지상파', logo:'https://backup.760515.xyz/logo/KBS Story.png', type:'hls', url:'https://kbsnw.gscdn.kbs.co.kr/kbsnw-01/kbsnw-01_sd.m3u8'},
   {id:'KBS WORLD', name:'KBS WORLD', group:'한국-지상파', logo:'https://backup.760515.xyz/logo/KBS WORLD.png', type:'hls', url:'https://world.gscdn.kbs.co.kr/world-01/world-01_sd.m3u8'},
   {id:'KBS뉴스', name:'KBS뉴스', group:'한국-지상파', logo:'https://backup.760515.xyz/logo/KBS뉴스.png', type:'hls', url:'https://news24.gscdn.kbs.co.kr/news24-02/news24-02_hd.m3u8'},
-  {id:'SBS', name:'SBS', group:'한국-지상파', logo:'https://backup.760515.xyz/logo/SBS.png', type:'sbs', url:'S01'},
-  {id:'SBS플러스', name:'SBS플러스', group:'한국-지상파', logo:'https://backup.760515.xyz/logo/SBS플러스.png', type:'hls', url:'https://tvlive.sbs.co.kr/sbspluspc/sbsplus1.stream/playlist.m3u8'},
-  {id:'SBS퍼니', name:'SBS퍼니', group:'한국-지상파', logo:'https://backup.760515.xyz/logo/SBS퍼니.png', type:'hls', url:'https://tvlive.sbs.co.kr/sbsetvpc/sbsetv1.stream/playlist.m3u8'},
-  {id:'SBS LIFE', name:'SBS LIFE', group:'한국-지상파', logo:'https://backup.760515.xyz/logo/SBS LIFE.png', type:'hls', url:'https://tvlive.sbs.co.kr/sbsfil/sbsfil1.stream/playlist.m3u8'},
-  {id:'SBS KPOP', name:'SBS KPOP', group:'한국-지상파', logo:'https://backup.760515.xyz/logo/SBS KPOP.png', type:'hls', url:'https://tvlive.sbs.co.kr/sbskpop/sbskpop1.stream/playlist.m3u8'},
-  {id:'SBS골프', name:'SBS골프', group:'한국-지상파', logo:'https://backup.760515.xyz/logo/SBS골프.png', type:'hls', url:'https://tvlive.sbs.co.kr/sbsgolf/sbsgolf1.stream/playlist.m3u8'},
-  {id:'SBS Golf2', name:'SBS Golf2', group:'한국-지상파', logo:'https://backup.760515.xyz/logo/SBS Golf2.png', type:'hls', url:'https://tvlive.sbs.co.kr/sbsgolf2/sbsgolf21.stream/playlist.m3u8'},
-  {id:'SBS스포츠', name:'SBS스포츠', group:'한국-지상파', logo:'https://backup.760515.xyz/logo/SBS스포츠.png', type:'hls', url:'https://tvlive.sbs.co.kr/sbsespn/sbsespn1.stream/playlist.m3u8'},
-  {id:'SBS Biz', name:'SBS Biz', group:'한국-지상파', logo:'https://backup.760515.xyz/logo/SBS Biz.png', type:'hls', url:'https://tvlive.sbs.co.kr/sbscnbc/sbscnbc1.stream/playlist.m3u8'},
+  {id:'SBS', name:'SBS', group:'한국-지상파', logo:'https://backup.760515.xyz/logo/SBS.png', type:'sbs', url:'sbsch6/sbsch61'},
+  {id:'SBS플러스', name:'SBS플러스', group:'한국-지상파', logo:'https://backup.760515.xyz/logo/SBS플러스.png', type:'sbs', url:'sbspluspc/sbsplus1'},
+  {id:'SBS퍼니', name:'SBS퍼니', group:'한국-지상파', logo:'https://backup.760515.xyz/logo/SBS퍼니.png', type:'sbs', url:'sbsetvpc/sbsetv1'},
+  {id:'SBS LIFE', name:'SBS LIFE', group:'한국-지상파', logo:'https://backup.760515.xyz/logo/SBS LIFE.png', type:'sbs', url:'sbsfil/sbsfil1'},
+  {id:'SBS KPOP', name:'SBS KPOP', group:'한국-지상파', logo:'https://backup.760515.xyz/logo/SBS KPOP.png', type:'sbs', url:'sbskpop/sbskpop1'},
+  {id:'SBS골프', name:'SBS골프', group:'한국-지상파', logo:'https://backup.760515.xyz/logo/SBS골프.png', type:'sbs', url:'sbsgolf/sbsgolf1'},
+  {id:'SBS Golf2', name:'SBS Golf2', group:'한국-지상파', logo:'https://backup.760515.xyz/logo/SBS Golf2.png', type:'sbs', url:'sbsgolf2/sbsgolf21'},
+  {id:'SBS스포츠', name:'SBS스포츠', group:'한국-지상파', logo:'https://backup.760515.xyz/logo/SBS스포츠.png', type:'sbs', url:'sbsespn/sbsespn1'},
+  {id:'SBS Biz', name:'SBS Biz', group:'한국-지상파', logo:'https://backup.760515.xyz/logo/SBS Biz.png', type:'sbs', url:'sbscnbc/sbscnbc1'},
   {id:'MBC', name:'MBC', group:'한국-지상파', logo:'https://backup.760515.xyz/logo/MBC.png', type:'mbc', url:'0'},
   {id:'MBC드라마넷', name:'MBC드라마넷', group:'한국-지상파', logo:'https://backup.760515.xyz/logo/MBC드라마넷.png', type:'hls', url:'https://dramaottsd.imbc.com/plus_drama_sd/definst/drama_sd.stream/chunklist.m3u8'},
   {id:'MBC에브리원', name:'MBC에브리원', group:'한국-지상파', logo:'https://backup.760515.xyz/logo/MBC에브리원.png', type:'hls', url:'https://every1ottsd.imbc.com/plus_every1_sd/definst/every1_sd.stream/chunklist.m3u8'},
