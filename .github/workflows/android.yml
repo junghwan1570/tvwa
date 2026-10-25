@@ -16,6 +16,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      PRIV_TOKEN: ${{ secrets.PRIVATE_RELEASE_TOKEN }}
     steps:
       - uses: actions/checkout@v4
 
@@ -62,12 +64,12 @@ jobs:
           cp android/app/build/outputs/apk/full/release/app-full-release.apk MyeongwangTV.apk
           cp android/app/build/outputs/apk/pub/release/app-pub-release.apk MyeongwangTV-Public.apk
 
+      # 공개 저장소라 누구나 받을 수 있으므로 공개판만 올림 (내 전용 APK는 집 NAS 주소가 들어 있어 올리지 않음)
       - uses: actions/upload-artifact@v4
         with:
-          name: MyeongwangTV
-          path: |
-            MyeongwangTV.apk
-            MyeongwangTV-Public.apk
+          name: MyeongwangTV-Public
+          path: MyeongwangTV-Public.apk
+          retention-days: 7
 
       - name: Publish to the "android-latest" release
         uses: softprops/action-gh-release@v2
@@ -75,10 +77,22 @@ jobs:
           tag_name: android-latest
           name: 명왕사신TV 앱 (최신)
           body: |
-            MyeongwangTV.apk: 기존 앱 (집 NAS 사용)
             MyeongwangTV-Public.apk: 공개판 (공개 주소만 사용, 유튜브는 설정에서 본인 API 키 입력)
             빌드 ${{ github.run_number }} · ${{ github.sha }}
-          files: |
-            MyeongwangTV.apk
-            MyeongwangTV-Public.apk
+          files: MyeongwangTV-Public.apk
+          make_latest: true
+
+      # 내 전용 APK → 비공개 저장소(tvwaad)의 릴리스로. 비밀값 PRIVATE_RELEASE_TOKEN이 있을 때만.
+      - name: Publish my APK to the private repo
+        if: ${{ env.PRIV_TOKEN != '' }}
+        uses: softprops/action-gh-release@v2
+        with:
+          repository: junghwan1570/tvwaad
+          token: ${{ secrets.PRIVATE_RELEASE_TOKEN }}
+          tag_name: android-latest
+          name: 명왕사신TV 앱 (내 전용, 최신)
+          body: |
+            MyeongwangTV.apk: 내 전용 (집 NAS 사용)
+            빌드 ${{ github.run_number }} · ${{ github.sha }}
+          files: MyeongwangTV.apk
           make_latest: true
