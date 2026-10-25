@@ -7,6 +7,7 @@
 <title>명왕사신TV</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.7/hls.min.js"></script>
+<script src="canvasplay.js"></script>
 <style>
 :root{color-scheme:dark;--bg:#0b1018;--sf:#121924;--card:#151d29;--card2:#1b2433;--bdr:#243042;--tx:#eef2f8;--tx2:#9aa6b8;--tx3:#5f6b7d;--acc:#b8f03c;--acc-d:#1a2a12;--acc-b:#3d5a1f;--red:#ff5a5a;--top:64px;--nav:72px}
 *{box-sizing:border-box;margin:0;padding:0}
@@ -39,6 +40,7 @@ button{cursor:pointer;background:none;border:0;-webkit-tap-highlight-color:trans
 .player{position:relative;aspect-ratio:16/9;background:#000;border-radius:22px;overflow:hidden;border:1px solid var(--bdr)}
 .player:fullscreen{border-radius:0;border:0}
 .player video,.player iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#000}
+.player canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000;display:block}
 .ph{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:24px;background:radial-gradient(ellipse at center,#121a26,#000 75%)}
 .ph h4{font-size:19px;font-weight:700}
 .ph p{color:var(--tx2);font-size:14px;max-width:460px}
@@ -206,6 +208,7 @@ button{cursor:pointer;background:none;border:0;-webkit-tap-highlight-color:trans
   <section class="left">
     <div class="player idle" id="player">
       <video id="vid" playsinline hidden></video>
+      <canvas id="cvs" hidden></canvas>
       <iframe id="frm" hidden allow="autoplay; fullscreen; picture-in-picture; encrypted-media" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
       <div class="ph" id="ph"></div>
       <div class="ov ov-tl">
@@ -249,6 +252,11 @@ button{cursor:pointer;background:none;border:0;-webkit-tap-highlight-color:trans
     <p>SBS·MBC·삼성TV 재생이 막힐 때 거쳐 가는 주소입니다. 비우면 사용하지 않습니다.</p>
     <input id="proxyIn" type="url" placeholder="https://○○.workers.dev">
     <div class="acts"><button class="btn" id="proxySave">저장</button><button class="btn sec" id="proxyReset">기본값</button></div>
+  </div>
+  <div class="set-card">
+    <h3>캔버스 재생</h3>
+    <p>영상을 브라우저가 직접 풀어 캔버스에 그립니다. 주행 중에도 재생되고 방송사 원본 화질 그대로입니다. 안 되는 채널은 자동으로 예전 방식으로 재생합니다.</p>
+    <div class="acts"><button class="btn" id="cvsToggle">켜짐</button></div>
   </div>
   <div class="set-card">
     <h3>즐겨찾기</h3>
@@ -864,6 +872,7 @@ function setQ(h){
   $('ovName').textContent = cur ? (cur.type === 'ytv' ? 'YouTube · ' + cur.name : [cur.name, 'LIVE', h ? h + 'p' : ''].filter(Boolean).join(' · ')) : '채널을 선택하세요';
 }
 function stop(){
+  stopCanvas();
   if (hls) { hls.destroy(); hls = null; }
   vid.pause(); vid.onerror = null; vid.removeAttribute('src'); vid.load();
   frm.src = 'about:blank'; frm.hidden = true;
@@ -925,7 +934,45 @@ function nativePlay(url, c, ok, fail){
   vid.addEventListener('playing', () => ok(), { once: true });
   vid.play().catch(() => {});
 }
+// ───────── 캔버스 재생 (WebCodecs) ─────────
+const CANVAS_OK = !!(window.H264Player && H264Player.supported() && window.HlsFeeder);
+let canvasOn = CANVAS_OK && store.get('mw_canvas', true);
+let cvp = null, sharedAudio = null;
+const cvs = $('cvs');
+function audioCtx(){
+  if (!sharedAudio) { const AC = window.AudioContext || window.webkitAudioContext; if (AC) sharedAudio = new AC({ latencyHint: 'playback' }); }
+  return sharedAudio;
+}
+// 브라우저는 화면을 한 번 눌러야 소리를 켤 수 있음
+document.addEventListener('pointerdown', () => { const a = audioCtx(); if (a && a.state !== 'running') a.resume().catch(() => {}); }, true);
+function stopCanvas(){ if (cvp) { cvp.destroy(); cvp = null; } cvs.hidden = true; }
 function startHls(url, c, direct, ok, fail){
+  if (!canvasOn) return startHlsVideo(url, c, direct, ok, fail);
+  stopCanvas();
+  let got = false;
+  const fallback = why => {
+    if (cur !== c) return;
+    stopCanvas();
+    if (got) return showErr('재생 끊김', `연결이 끊겼습니다. 다시 시도해 보세요.<br><small>(${esc(why)})</small>`);
+    console.warn('[canvas] 예전 방식으로 재생:', why);
+    startHlsVideo(url, c, direct, ok, fail);
+  };
+  const p = cvp = new H264Player(null, {
+    feed: true, canvas: cvs, audioContext: audioCtx(), bufferMs: 1500,
+    onVideoDecode: () => {
+      if (got || p !== cvp) return;
+      got = true; ok();
+      vid.hidden = true; cvs.hidden = false; phHide(); idleSoon(); syncPause();
+      setQ(cvs.height);
+      if (sharedAudio && sharedAudio.state !== 'running') toast('화면을 한 번 누르면 소리가 나옵니다');
+    },
+  });
+  p.volume = 1;
+  new HlsFeeder(url, p, why => fallback(why));
+  setTimeout(() => { if (!got && p === cvp) fallback('12초 동안 화면이 나오지 않음'); }, 12000);
+}
+function startHlsVideo(url, c, direct, ok, fail){
+  stopCanvas();
   vid.hidden = false;
   const native = vid.canPlayType('application/vnd.apple.mpegurl');
   if (!(window.Hls && Hls.isSupported())) {
@@ -957,7 +1004,8 @@ vid.addEventListener('playing', () => { phHide(); idleSoon(); syncPause(); });
 vid.addEventListener('pause', syncPause);
 vid.addEventListener('loadedmetadata', () => { if (!hls && vid.videoHeight) setQ(vid.videoHeight); });
 function syncPause(){
-  $('icPause').innerHTML = vid.paused ? '<path d="M7 4l13 8-13 8z"/>' : '<rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/>';
+  const paused = cvp ? cvp.isPaused() : vid.paused;
+  $('icPause').innerHTML = paused ? '<path d="M7 4l13 8-13 8z"/>' : '<rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/>';
 }
 function step(n){
   if (cur && cur.type === 'ytv' && ytItems.length) {
@@ -1042,7 +1090,7 @@ $('bSearch').onclick = () => { const s = $('searchBar'); s.hidden = !s.hidden; i
 $('q').oninput = () => { query = $('q').value.trim().toLowerCase(); if (view === 'set') setView('live'); else refreshAll(); };
 $('bPrev').onclick = () => step(-1);
 $('bNext').onclick = () => step(1);
-$('bPause').onclick = () => { if (!cur) return; vid.paused ? vid.play().catch(() => {}) : vid.pause(); };
+$('bPause').onclick = () => { if (!cur) return; if (cvp) { cvp.setPaused(!cvp.isPaused()); syncPause(); return; } vid.paused ? vid.play().catch(() => {}) : vid.pause(); };
 $('bFull').onclick = () => {
   if (document.fullscreenElement || document.webkitFullscreenElement) (document.exitFullscreen || document.webkitExitFullscreen).call(document);
   else if (player.requestFullscreen) player.requestFullscreen();
@@ -1051,6 +1099,13 @@ $('bFull').onclick = () => {
 };
 $('proxySave').onclick = () => { TOKEN_PROXY = $('proxyIn').value.trim().replace(/\/+$/, ''); try { localStorage.setItem('mw_proxy', TOKEN_PROXY); } catch {} toast('저장했습니다'); loadEpg(true); };
 $('proxyReset').onclick = () => { TOKEN_PROXY = DEFAULT_PROXY; try { localStorage.removeItem('mw_proxy'); } catch {} updateSettings(); toast('기본값으로 되돌렸습니다'); loadEpg(true); };
+function showCanvasBtn(){
+  const b = $('cvsToggle'); if (!b) return;
+  if (!CANVAS_OK) { b.textContent = '이 브라우저는 지원하지 않음'; b.disabled = true; b.className = 'btn sec'; return; }
+  b.textContent = canvasOn ? '켜짐' : '꺼짐'; b.className = canvasOn ? 'btn' : 'btn sec';
+}
+showCanvasBtn();
+$('cvsToggle').onclick = () => { canvasOn = !canvasOn; store.set('mw_canvas', canvasOn); showCanvasBtn(); toast(canvasOn ? '캔버스 재생을 켰습니다' : '예전 방식(동영상)으로 재생합니다'); if (cur) play(cur); };
 $('favClear').onclick = () => { if (!favs.length || !confirm('즐겨찾기를 모두 삭제할까요?')) return; favs = []; store.set('mw_favs', favs); updateSettings(); toast('삭제했습니다'); };
 $('epgReload').onclick = async () => { $('epgInfo').textContent = '받는 중…'; await loadEpg(true); updateSettings(); toast('편성표를 새로 받았습니다'); };
 document.addEventListener('keydown', e => {
