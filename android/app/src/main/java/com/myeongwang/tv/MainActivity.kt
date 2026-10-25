@@ -3,6 +3,8 @@ package com.myeongwang.tv
 import android.annotation.SuppressLint
 import android.app.PictureInPictureParams
 import android.content.ContentValues
+import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.graphics.Color
@@ -16,6 +18,7 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Rational
 import android.view.GestureDetector
+import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
@@ -69,6 +72,7 @@ import kotlin.math.roundToInt
  *  - 화면(채널 목록·편성표·설정)은 tvwa의 index.html을 WebView로 그대로 씀 (앱 안에 내장)
  *  - 영상은 ExoPlayer가 재생: WebView 뒤에 깔고, 웹 화면의 플레이어 칸을 투명하게 뚫어 보여 줌
  *  - 방송사 토큰 API는 앱이 직접 받음(https://relay.app/?url=…) → 휴대폰의 국내 IP로 MBC 등도 재생
+ *  - 안드로이드 TV(쉴드TV)에서는 리모컨 화면: 리모컨 키를 웹 화면(window.__tvKey)으로 넘김
  */
 @androidx.annotation.OptIn(markerClass = [UnstableApi::class])
 class MainActivity : ComponentActivity() {
@@ -90,6 +94,12 @@ class MainActivity : ComponentActivity() {
     private var cornerPx = 0f
 
     private val prefs by lazy { getSharedPreferences("app", MODE_PRIVATE) }
+
+    /** 안드로이드 TV(쉴드TV 등)에서 켜졌는지 → 웹 화면이 리모컨용 TV 화면으로 뜸 */
+    private val isTv by lazy {
+        (resources.configuration.uiMode and Configuration.UI_MODE_TYPE_MASK) == Configuration.UI_MODE_TYPE_TELEVISION ||
+            packageManager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)
+    }
 
     /* ───────────────────── 진단 기록 (파일) ───────────────────── */
     private val logFile by lazy { File(filesDir, "applog.txt") }
@@ -139,7 +149,7 @@ class MainActivity : ComponentActivity() {
         root = FrameLayout(this).apply { setBackgroundColor(0xFF0B1018.toInt()) }
         playerView = LayoutInflater.from(this).inflate(R.layout.player_view, root, false) as PlayerView
         playerView.visibility = View.INVISIBLE
-        cornerPx = 16f * resources.displayMetrics.density
+        cornerPx = if (isTv) 0f else 16f * resources.displayMetrics.density   // TV는 화면 전체라 모서리 없음
         playerView.outlineProvider = object : ViewOutlineProvider() {
             override fun getOutline(v: View, o: Outline) {
                 o.setRoundRect(0, 0, v.width, v.height, if (fullscreen || inPip) 0f else cornerPx)
@@ -288,6 +298,97 @@ class MainActivity : ComponentActivity() {
         @JavascriptInterface fun getLast(): String = prefs.getString("last", "") ?: ""
     }
 
+    /* ───────────── TV 전용 기능 (웹 화면에서 window.TvBridge.*) ───────────── */
+    inner class TvBridge {
+        @JavascriptInterface fun isTv(): Boolean = this@MainActivity.isTv
+
+        /** 방송 주소의 최고 해상도(세로 픽셀)를 확인해 window.__tvCb(id, "높이")로 알려 줌 — 지역 방송 화질순 정렬용 */
+        @JavascriptInterface fun probeAsync(url: String, referer: String, id: String) {
+            Thread {
+                val h = try { probeHeight(url, referer) } catch (e: Exception) { 0 }
+                tvCallback(id, h.toString())
+            }.start()
+        }
+
+        /** 공식 유튜브 앱 열기 (TV는 유튜브 TV 앱 우선). 앱이 없으면 유튜브 웹사이트 */
+        @JavascriptInterface fun openYoutube(): String = try {
+            val pkgs = if (isTv) listOf("com.google.android.youtube.tv", "com.google.android.youtube", "com.google.android.apps.youtube.unplugged")
+                       else listOf("com.google.android.youtube", "com.google.android.youtube.tv")
+            var opened: String? = null
+            for (p in pkgs) {
+                val i = (if (isTv) packageManager.getLeanbackLaunchIntentForPackage(p) else null) ?: packageManager.getLaunchIntentForPackage(p)
+                if (i != null) { i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); startActivity(i); opened = p; break }
+            }
+            if (opened == null) {
+                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://www.youtube.com/")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                opened = "web"
+            }
+            log("유튜브 열기: $opened")
+            "ok:$opened"
+        } catch (e: Exception) { "ERR:${e.message}" }
+    }
+
+    private fun tvCallback(id: String, value: String) {
+        val js = "window.__tvCb && window.__tvCb(${JSONObject.quote(id)}, ${JSONObject.quote(value)})"
+        main.post { web.evaluateJavascript(js, null) }
+    }
+
+    private fun httpText(url: String, referer: String, max: Int = 256 * 1024): String {
+        val c = URL(url).openConnection() as HttpURLConnection
+        c.connectTimeout = 8000; c.readTimeout = 10000; c.instanceFollowRedirects = true
+        c.setRequestProperty("User-Agent", ua)
+        if (referer.isNotEmpty()) { c.setRequestProperty("Referer", referer); c.setRequestProperty("Origin", referer.split("/").take(3).joinToString("/")) }
+        val code = c.responseCode
+        if (code >= 400) throw IllegalStateException("HTTP $code")
+        val bytes = c.inputStream.use { inp ->
+            val out = java.io.ByteArrayOutputStream(); val b = ByteArray(8192)
+            while (out.size() < max) { val n = inp.read(b); if (n <= 0) break; out.write(b, 0, n) }
+            out.toByteArray()
+        }
+        return String(bytes, Charsets.UTF_8)
+    }
+
+    private fun probeHeight(url: String, referer: String): Int {
+        val re = Regex("RESOLUTION=\\d+x(\\d+)")
+        val t = httpText(url, referer)
+        var best = re.findAll(t).maxOfOrNull { it.groupValues[1].toInt() } ?: 0
+        if (best == 0 && t.contains("#EXT-X-STREAM-INF")) {   // 한 단계 아래 재생목록까지
+            val sub = t.lines().firstOrNull { it.isNotBlank() && !it.startsWith("#") }
+            if (sub != null) best = re.findAll(httpText(URL(URL(url), sub.trim()).toString(), referer)).maxOfOrNull { it.groupValues[1].toInt() } ?: 0
+        }
+        return best
+    }
+
+    /* ───────────── TV 리모컨: 키를 웹 화면(window.__tvKey)으로 넘김 (QQ 앱 조작 방식) ───────────── */
+    private fun tvKeyName(k: Int): String? = when (k) {
+        KeyEvent.KEYCODE_DPAD_UP -> "up"
+        KeyEvent.KEYCODE_DPAD_DOWN -> "down"
+        KeyEvent.KEYCODE_DPAD_LEFT -> "left"
+        KeyEvent.KEYCODE_DPAD_RIGHT -> "right"
+        KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_NUMPAD_ENTER, KeyEvent.KEYCODE_BUTTON_A -> "ok"
+        KeyEvent.KEYCODE_BACK, KeyEvent.KEYCODE_ESCAPE, KeyEvent.KEYCODE_BUTTON_B -> "back"
+        KeyEvent.KEYCODE_MENU, KeyEvent.KEYCODE_SETTINGS -> "menu"
+        KeyEvent.KEYCODE_CHANNEL_UP, KeyEvent.KEYCODE_PAGE_UP -> "chup"
+        KeyEvent.KEYCODE_CHANNEL_DOWN, KeyEvent.KEYCODE_PAGE_DOWN -> "chdown"
+        KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, KeyEvent.KEYCODE_MEDIA_PLAY, KeyEvent.KEYCODE_MEDIA_PAUSE, KeyEvent.KEYCODE_SPACE -> "playpause"
+        KeyEvent.KEYCODE_INFO, KeyEvent.KEYCODE_GUIDE -> "info"
+        KeyEvent.KEYCODE_PROG_RED -> "red"
+        KeyEvent.KEYCODE_DEL -> "del"
+        in KeyEvent.KEYCODE_0..KeyEvent.KEYCODE_9 -> "d" + (k - KeyEvent.KEYCODE_0)
+        in KeyEvent.KEYCODE_NUMPAD_0..KeyEvent.KEYCODE_NUMPAD_9 -> "d" + (k - KeyEvent.KEYCODE_NUMPAD_0)
+        else -> null
+    }
+
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (!isTv) return super.dispatchKeyEvent(event)
+        val name = tvKeyName(event.keyCode) ?: return super.dispatchKeyEvent(event)   // 볼륨·홈 등은 시스템이 처리
+        if (event.action != KeyEvent.ACTION_DOWN) return true
+        val back = name == "back"
+        val js = "(function(){try{return window.__tvKey?String(__tvKey('$name',${event.repeatCount})||''):'${if (back) "exit" else ""}'}catch(x){return ''}})()"
+        web.evaluateJavascript(js) { r -> if (r?.contains("exit") == true) finish() }
+        return true
+    }
+
     /** 웹 화면의 플레이어 칸 위치로 영상을 옮김 */
     private fun applyRect() {
         if (fullscreen || inPip) return
@@ -315,6 +416,7 @@ class MainActivity : ComponentActivity() {
             userAgentString = userAgentString + " MyeongwangTVApp/1"
         }
         web.addJavascriptInterface(Bridge(), "AppBridge")
+        web.addJavascriptInterface(TvBridge(), "TvBridge")
         web.webChromeClient = object : WebChromeClient() {
             override fun onConsoleMessage(m: ConsoleMessage): Boolean {
                 android.util.Log.d("tvwa", "${m.message()} (${m.lineNumber()})"); return true
@@ -345,6 +447,7 @@ class MainActivity : ComponentActivity() {
             host.endsWith("kbs.co.kr") -> "https://onair.kbs.co.kr/"
             host.endsWith("jtbc.co.kr") -> "https://onair.jtbc.co.kr/"
             host.endsWith("sooplive.com") || host.endsWith("sooplive.co.kr") -> "https://play.sooplive.com/"
+            host == "api.chzzk.naver.com" -> "https://chzzk.naver.com/"                                  // 치지직
             host.endsWith("skylife.co.kr") -> "https://www.skylife.co.kr/product/tv/channelNo/chart"   // 편성표
             host == "raw.githubusercontent.com" -> ""                                                  // 삼성TV 편성표
             else -> return WebResourceResponse("text/plain", "utf-8", 403, "Forbidden", cors, ByteArrayInputStream("host not allowed".toByteArray()))
@@ -435,6 +538,7 @@ class MainActivity : ComponentActivity() {
     /* ─────────────────────── 작은 창(PIP)·앱 전환 ─────────────────────── */
     override fun onUserLeaveHint() {
         super.onUserLeaveHint()
+        if (isTv) return   // TV는 홈 버튼을 누르면 그냥 나감 (작은 창 안 씀)
         if (player.isPlaying && player.videoFormat != null) {
             try {
                 enterPictureInPictureMode(PictureInPictureParams.Builder().setAspectRatio(Rational(16, 9)).build())

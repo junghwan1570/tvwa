@@ -189,9 +189,93 @@ html.app .player{background:transparent}
   .row{min-height:72px;padding:10px 10px 10px 12px;gap:10px}.r-no{width:24px;font-size:14px}.r-logo{width:44px}
   .r-name{font-size:16px}.r-play{width:46px;height:46px}.r-star{width:40px;font-size:22px}
 }
+/* ───────── TV 모드 (안드로이드 TV · 쉴드TV) ───────── */
+html.tv,html.tv body{background:transparent;overflow:hidden}
+html.tv body{padding:0!important}
+html.tv .top,html.tv #searchBar,html.tv .right,html.tv .bnav,html.tv .now,html.tv #guideView,html.tv #setView,html.tv #player .ov{display:none!important}
+html.tv .wrap,html.tv .left{display:block!important;margin:0!important;padding:0!important;position:static!important}
+html.tv #player{position:fixed!important;left:0!important;top:0!important;width:100vw!important;height:100vh!important;max-width:none!important;max-height:none!important;aspect-ratio:auto!important;border-radius:0!important;margin:0!important;border:0!important;z-index:1}
+html.tv #player .ph{font-size:2vw}
+html.tv .toast{z-index:60;font-size:1.6vw;bottom:auto!important;top:5vh!important}
+.tvl{position:fixed;z-index:30;color:var(--tx);font-family:'Noto Sans KR',sans-serif}
+.tv-info{left:4vw;right:4vw;bottom:5vh;display:flex;gap:2vw;align-items:center;padding:1.6vw 2vw;border-radius:1.4vw;background:linear-gradient(180deg,rgba(14,20,30,.88),rgba(10,14,22,.94));border:1px solid rgba(255,255,255,.08);box-shadow:0 1vw 3vw rgba(0,0,0,.5)}
+.tv-info .num{font-size:3.6vw;font-weight:900;color:var(--acc);min-width:6vw;text-align:center;line-height:1}
+.tv-info .lg{width:9vw;height:5.4vw;border-radius:.8vw;background:#fff1;display:flex;align-items:center;justify-content:center;overflow:hidden;font-weight:700;font-size:1.6vw;flex:none}
+.tv-info .lg img{max-width:85%;max-height:80%;object-fit:contain}
+.tv-info .bd{flex:1;min-width:0}
+.tv-info .nm{font-size:2.5vw;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tv-info .meta{font-size:1.3vw;color:var(--tx2);margin-left:1vw;font-weight:500}
+.tv-info .tag{display:inline-block;font-size:1.1vw;font-weight:700;padding:.15vw .6vw;border-radius:.4vw;background:var(--acc-d);color:var(--acc);border:1px solid var(--acc-b);margin-left:.6vw;vertical-align:middle}
+.tv-info .pg{font-size:1.6vw;margin-top:.4vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tv-info .pg.nx{color:var(--tx2);font-size:1.4vw;margin-top:.2vw}
+.tv-info .bar{height:.35vw;background:#ffffff1f;border-radius:1vw;margin-top:.6vw;overflow:hidden}
+.tv-info .bar i{display:block;height:100%;background:var(--acc);border-radius:1vw}
+.tv-info .clk{font-size:2.2vw;font-weight:700;color:var(--tx2);flex:none}
+.tv-menu{left:3vw;top:5vh;bottom:5vh;display:flex;gap:1vw}
+.tv-col{background:rgba(10,14,22,.93);border:1px solid rgba(255,255,255,.08);border-radius:1.2vw;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 1vw 3vw rgba(0,0,0,.5)}
+.tv-col h5{font-size:1.2vw;color:var(--tx3);padding:1vw 1.4vw .4vw;font-weight:700;letter-spacing:.05em}
+.tv-col .sc{overflow:hidden;flex:1;padding:.3vw .6vw 1vw}
+.tv-grp{width:17vw}
+.tv-chs{width:42vw}
+.tv-it{display:flex;align-items:center;gap:1vw;padding:.7vw 1vw;border-radius:.8vw;font-size:1.6vw;white-space:nowrap;border:2px solid transparent}
+.tv-it .n{color:var(--tx3);font-weight:700;min-width:3.6vw;font-size:1.4vw;text-align:right}
+.tv-it .l{width:4.4vw;height:2.6vw;border-radius:.4vw;background:#fff1;display:flex;align-items:center;justify-content:center;overflow:hidden;font-size:1vw;font-weight:700;flex:none}
+.tv-it .l img{max-width:85%;max-height:80%;object-fit:contain}
+.tv-it .t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.tv-it .t small{display:block;font-size:1.15vw;color:var(--tx2);overflow:hidden;text-overflow:ellipsis}
+.tv-it .c{font-size:1.2vw;color:var(--tx3)}
+.tv-it.cur .t{color:var(--acc)}
+.tv-it.fav .t:after{content:' ★';color:#ffd34d;font-size:1.1vw}
+.tv-col.act .tv-it.sel{background:var(--acc);color:#0b1018;border-color:var(--acc)}
+.tv-col.act .tv-it.sel,.tv-col.act .tv-it.sel *{color:#0b1018!important}
+.tv-col.act .tv-it.sel .l{background:#0b101822}
+.tv-col.act .tv-it.sel .th b{color:#fff!important}
+.tv-col:not(.act) .tv-it.sel{border-color:var(--acc-b);background:#ffffff10}
+.tv-hint{font-size:1.1vw;color:var(--tx3);padding:.6vw 1.4vw 1vw;border-top:1px solid #ffffff10}
+.tv-set{right:4vw;top:8vh;width:36vw}
+.tv-set .tv-it{font-size:1.7vw}
+.tv-num{right:5vw;top:6vh;font-size:6vw;font-weight:900;color:var(--acc);background:rgba(10,14,22,.85);padding:.6vw 2.4vw;border-radius:1.2vw;letter-spacing:.05em}
+.tv-num small{display:block;font-size:1.5vw;color:var(--tx);font-weight:700;text-align:center;letter-spacing:0}
+.tv-reg{width:24vw}
+.tv-it .tg{font-size:1.05vw;font-weight:700;padding:.1vw .5vw;border-radius:.4vw;background:#ffffff14;color:var(--tx2);flex:none}
+.tv-it.vid{align-items:flex-start}
+.tv-it .th{width:9.6vw;height:5.4vw;border-radius:.5vw;background:#fff1;overflow:hidden;flex:none;position:relative}
+.tv-it .th img{width:100%;height:100%;object-fit:cover}
+.tv-it .th b{position:absolute;right:.3vw;bottom:.3vw;font-size:.9vw;background:#000c;color:#fff;padding:0 .4vw;border-radius:.3vw}
+.tv-it .th b.live{background:var(--red)}
+.tv-it.vid .t{white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;font-size:1.45vw;line-height:1.35}
+.tv-it.vid .t small{white-space:nowrap;margin-top:.2vw}
+.tv-it.grp-x .t{color:var(--acc)}
+.tv-empty{font-size:1.5vw;color:var(--tx2);padding:2vw 1.4vw;line-height:1.6;white-space:normal}
+.tv-info .hint{font-size:1.2vw;color:var(--acc);margin-top:.4vw}
+.tv-keys{left:4vw;top:4vh;font-size:1.15vw;color:var(--tx2);background:rgba(10,14,22,.8);padding:.5vw 1vw;border-radius:.6vw}
+.r-reg{flex:none;font:700 13px/1 inherit;font-family:inherit;color:var(--acc);background:var(--acc-d);border:1px solid var(--acc-b);border-radius:10px;padding:9px 10px;white-space:nowrap}
+.r-reg.on{background:var(--acc);color:#0b1018}
+.row.sub{margin-left:26px;width:calc(100% - 26px);min-height:68px;background:var(--card2);padding:10px 12px 10px 14px}
+.row.sub .r-no{font-size:12px;min-width:44px;text-align:center;color:var(--acc);font-weight:800}
+.r-q{display:inline-block;font-size:11px;font-weight:800;padding:2px 6px;border-radius:6px;background:var(--acc-d);color:var(--acc);border:1px solid var(--acc-b);margin-left:6px;vertical-align:middle}
+.v-th b.live{background:var(--red)!important;color:#fff}
+.r-reg{flex:none;font:700 13px/1 inherit;font-family:inherit;color:var(--acc);background:var(--acc-d);border:1px solid var(--acc-b);border-radius:10px;padding:9px 10px;white-space:nowrap}
+.r-reg.on{background:var(--acc);color:#0b1018}
+.row.sub{margin-left:26px;width:calc(100% - 26px);min-height:68px;background:var(--card2);padding:10px 12px 10px 14px}
+.row.sub .r-no{font-size:12px;min-width:44px;text-align:center;color:var(--acc);font-weight:800}
+.r-q{display:inline-block;font-size:11px;font-weight:800;padding:2px 6px;border-radius:6px;background:var(--acc-d);color:var(--acc);border:1px solid var(--acc-b);margin-left:6px;vertical-align:middle}
+.v-th b.live{background:var(--red)!important;color:#fff}
 </style>
+<script>/* TV(안드로이드 TV·쉴드TV)면 리모컨 화면, 휴대폰이면 원래 화면 */ try { window.MW_TV = !!(window.TvBridge && window.TvBridge.isTv && window.TvBridge.isTv()); } catch (e) { window.MW_TV = false; }</script>
 </head>
 <body>
+<div class="tvl tv-info" id="tvInfo" hidden></div>
+<div class="tvl tv-menu" id="tvMenu" hidden>
+  <div class="tv-col tv-grp" id="tvGrpCol"><h5>분류</h5><div class="sc" id="tvGrp"></div></div>
+  <div class="tv-col tv-chs" id="tvChCol"><h5 id="tvChTitle">채널</h5><div class="sc" id="tvCh"></div><div class="tv-hint" id="tvChHint">OK 재생 · ◀ 분류 · CH± 10칸 · 메뉴 즐겨찾기</div></div>
+  <div class="tv-col tv-reg" id="tvRegCol" hidden><h5 id="tvRegTitle">지역 선택</h5><div class="sc" id="tvReg"></div><div class="tv-hint">OK 재생 · ◀ 뒤로</div></div>
+</div>
+<div class="tvl tv-col tv-set" id="tvSet" hidden><h5>설정</h5><div class="sc" id="tvSetList"></div><div class="tv-hint">OK 선택 · 뒤로 닫기</div></div>
+<div class="tvl tv-num" id="tvNum" hidden></div>
+<div class="tvl tv-keys" id="tvKeys" hidden>OK·◀ 채널 목록 · ▲▼ 채널 이동 · ▶ 방송 정보 · 뒤로 2번 종료</div>
+
+
 
 <header class="top">
   <svg class="logo" viewBox="0 0 48 48" aria-hidden="true">
@@ -319,7 +403,10 @@ function pickM3u8(t){
 async function resolveUrl(ch, viaProxy){
   if(ch.type === 'kbs'){
     const j = JSON.parse(await getText(ch.url, viaProxy));
-    const u = j && j.channel_item && j.channel_item[0] && j.channel_item[0].service_url;
+    // 화질이 여러 개면 비트레이트가 가장 높은 주소 사용
+    const items = (j && Array.isArray(j.channel_item) ? j.channel_item : []).filter(x => x && x.service_url);
+    items.sort((a, b) => (parseInt(b.bitrate, 10) || 0) - (parseInt(a.bitrate, 10) || 0));
+    const u = items[0] && items[0].service_url;
     if(!u) throw new Error('KBS 스트림 주소를 가져오지 못했습니다.');
     return u;
   }
@@ -345,16 +432,27 @@ async function resolveUrl(ch, viaProxy){
     if(!u) throw new Error('JTBC 재생 주소를 받지 못했습니다.');
     return u;
   }
-  if(ch.type === 'soop'){
-    // SOOP 생방송: 시청 토큰(AID) + 스트림 서버 주소 → auth_playlist.m3u8?aid=…
-    const [bid, bno] = ch.url.split('|');
-    const form = new URLSearchParams({ bid, bno, type: 'aid', pwd: '', player_type: 'html5', stream_type: 'common', quality: 'original', mode: 'landing', from_api: '0', is_revive: 'false' }).toString();
-    const a = JSON.parse(await soopApi('https://live.sooplive.co.kr/afreeca/player_live_api.php?bjid=' + encodeURIComponent(bid), form));
-    const aid = a && a.CHANNEL && a.CHANNEL.AID;
-    if (!aid) throw new Error('SOOP 방송이 끝났거나 시청할 수 없습니다 (' + (a && a.CHANNEL ? a.CHANNEL.RESULT : '?') + ')');
-    const s = JSON.parse(await soopApi('https://livestream-manager.sooplive.com/broad_stream_assign.html?return_type=gcp_cdn&use_cors=false&cors_origin_url=play.sooplive.com&broad_key=' + bno + '-common-original-hls'));
-    if (!s.view_url) throw new Error('SOOP 스트림 주소를 받지 못했습니다');
-    return s.view_url + '?aid=' + encodeURIComponent(aid);
+  if(ch.type === 'chz'){
+    // 치지직: 방송 상세 → livePlaybackJson → HLS 주소 (여러 화질이 든 master 재생목록, 앱이 가장 높은 화질 선택)
+    const fail = m => { window.__soopErr = m; throw new Error(m); };
+    if (!window.AppBridge) fail('치지직은 명왕사신TV 앱에서만 재생됩니다');
+    let content = null, last = '';
+    for (const v of ['v3', 'v2']) {
+      try {
+        const j = JSON.parse(await relGet(`https://api.chzzk.naver.com/service/${v}/channels/${encodeURIComponent(ch.url)}/live-detail`));
+        if (j && j.content) { content = j.content; break; }
+        last = (j && j.message) || '방송 정보 없음';
+      } catch (e) { last = e.message; }
+    }
+    if (!content) fail('치지직 방송 정보를 받지 못했습니다: ' + last);
+    if (content.status && content.status !== 'OPEN') fail('치지직: 방송이 끝났습니다');
+    if (!content.livePlaybackJson) fail(content.adult ? '치지직: 19세 방송은 로그인이 필요합니다' : '치지직: 재생 정보가 없습니다');
+    let pb; try { pb = JSON.parse(content.livePlaybackJson); } catch (e) { fail('치지직 재생 정보 형식 오류'); }
+    const media = (pb && pb.media) || [];
+    const m = media.find(x => x.mediaId === 'HLS' && x.path) || media.find(x => /m3u8/.test(x.path || ''));
+    if (!m) fail('치지직 HLS 주소가 없습니다');
+    window.__soopErr = '';
+    return m.path;
   }
   if(ch.type === 'stvp') return 'https://jmp2.uk/stvp-' + ch.url;
   return ch.url;
@@ -589,6 +687,66 @@ function setupM3uData(list) {
 
 setupM3uData(M3U_ITEMS);
 
+// ───────── QQ(코리아TV QQ) 채널 소스 ─────────
+// QQ 앱이 쓰는 출처를 그대로 가져와 같은 이름의 채널에 '추가 출처'로 붙입니다 (tvN·JTBC 등).
+//  1) kenpark76 GitHub 채널별 재생목록  …/playlist/<채널이름>-playlist.m3u8  (QQ의 CH1)
+//  2) QQ 채널 목록 koreatv.json 의 uris
+const QQ_BASE = 'https://raw.githubusercontent.com/kenpark76/kenpark76.github.io/main';
+const QQ_SRCS = [QQ_BASE + '/koreatv.json', 'https://cdn.jsdelivr.net/gh/kenpark76/kenpark76.github.io@main/koreatv.json'];
+const QQ_PL = n => QQ_BASE + '/playlist/' + encodeURI(String(n).trim()) + '-playlist.m3u8';
+const QQ_TTL = 60 * 60 * 1000;
+let QQ_STATE = (() => { try { return JSON.parse(localStorage.getItem('mw_qq') || 'null'); } catch { return null; } })();
+function parseQq(arr){
+  if (!Array.isArray(arr)) throw new Error('QQ 목록 형식이 아닙니다');
+  const out = [];
+  arr.forEach(c => {
+    if (!c || !c.name || !String(c.name).trim()) return;
+    const name = String(c.name).trim();
+    const uris = [QQ_PL(name)];
+    (Array.isArray(c.uris) ? c.uris : []).forEach(u => {
+      u = String(u || '').trim();
+      if (!/^https?:\/\//i.test(u)) return;
+      if (!window.AppBridge && /^http:/i.test(u)) return; // 웹(HTTPS 페이지)에서는 http 주소 재생 불가
+      if (!uris.includes(u)) uris.push(u);
+    });
+    out.push({ name, group: String(c.group || '').trim(), logo: String(c.logo || ''), uris });
+  });
+  return out;
+}
+async function refreshQq(force){
+  if (!force && QQ_STATE && QQ_STATE.items && Date.now() - QQ_STATE.t < QQ_TTL) return false;
+  let last;
+  for (const src of QQ_SRCS) {
+    try {
+      const r = await fetch(src, { cache: 'no-store' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const items = parseQq(JSON.parse(await r.text()));
+      if (items.length < 5) throw new Error('QQ 채널이 너무 적습니다');
+      const changed = !QQ_STATE || JSON.stringify(items) !== JSON.stringify(QQ_STATE.items);
+      QQ_STATE = { t: Date.now(), items, err: null };
+      try { localStorage.setItem('mw_qq', JSON.stringify(QQ_STATE)); } catch {}
+      return changed;
+    } catch (e) { last = e; }
+  }
+  QQ_STATE = { ...(QQ_STATE || { t: 0, items: null }), err: last ? last.message : 'QQ 목록을 받지 못했습니다' };
+  throw last || new Error('QQ 목록을 받지 못했습니다');
+}
+function setupQqData(){
+  for (let i = DATA.length - 1; i >= 0; i--) if (DATA[i].qq) DATA.splice(i, 1);
+  const groups = {}, seen = new Set(), cnt = {};
+  const add = (g, name, url, logo) => {
+    const k = name + '|' + url; if (seen.has(k)) return; seen.add(k);
+    cnt[name] = (cnt[name] || 0) + 1;
+    (groups[g] = groups[g] || []).push(['qq_' + name + '_' + cnt[name], name, 'hls', url, 'free', logo || '']);
+  };
+  // QQ 목록을 아직 못 받았어도: QQ가 GitHub 재생목록으로 트는 채널은 바로 추가
+  M3U_BUILTIN.forEach(b => { if (b.type === 'hls' && /760515\.xyz\/playlist\//.test(b.url)) add('QQ', b.name, QQ_PL(b.name), ''); });
+  const items = QQ_STATE && Array.isArray(QQ_STATE.items) ? QQ_STATE.items : [];
+  items.forEach(c => c.uris.forEach(u => add('QQ' + (c.group ? ' · ' + c.group : ''), c.name, u, /^https:/.test(c.logo) ? c.logo : '')));
+  DATA.push({ tab: 'QQ', qq: true, groups: Object.entries(groups).map(([g, its]) => ({ g, items: its })) });
+}
+setupQqData();
+
 // ───────── 상태 ─────────
 const $ = id => document.getElementById(id);
 const store = {
@@ -602,7 +760,15 @@ const nowSec = () => Date.now() / 1000;
 let ALL = [];
 
 const FAV = '★ 즐겨찾기';
-const YT = '▶ 유튜브 인기';
+const YT = window.AppBridge ? '▶ 유튜브' : '▶ 유튜브 인기';
+// 앱: 공식 유튜브 앱 열기 (앱이 없으면 유튜브 웹사이트)
+function openYoutube(){
+  let r = null;
+  try { if (window.TvBridge && window.TvBridge.openYoutube) r = window.TvBridge.openYoutube(); } catch (e) { r = 'ERR:' + e.message; }
+  if (r === null) return false;
+  if (/^ERR/.test(r)) toast('유튜브를 열지 못했습니다: ' + r.slice(4));
+  return true;
+}
 const YT_CATS = [['0', '전체'], ['10', '음악'], ['24', '엔터'], ['23', '코미디'], ['20', '게임'], ['17', '스포츠'], ['25', '뉴스'], ['22', '인물·블로그']];
 let ytCat = store.get('mw_ytcat', '0'), ytItems = [], ytState = '', ytErr = '', ytBusy = false;
 const ytMem = {};
@@ -749,6 +915,7 @@ function srcH(x){
 function srcRank(x){
   if (/^(kbs|sbs|mbc|jtbc)$/.test(x.type)) return 0;
   if (x.type === 'yt') return 3;
+  if (/kenpark76/.test(x.url)) return 0.5;   // QQ 앱 GitHub 재생목록
   if (/760515\.xyz|epg\.pw/.test(x.url)) return 2;
   return 1;
 }
@@ -825,6 +992,10 @@ function buildChannels(){
     if (!c.sources.some(s => s.url === r.url)) c.sources.push({ type: r.type, url: r.url, h: r.h || 0 });
   });
   out.forEach(c => {
+    // KBS 계열 SD 주소(_sd.m3u8)는 HD 주소(_hd.m3u8)를 먼저 시도 (안 되면 SD로 자동 전환)
+    const hd = [];
+    c.sources.forEach(x => { if (x.type === 'hls' && /\.gscdn\.kbs\.co\.kr\/.*_sd\.m3u8/.test(x.url)) { const u = x.url.replace(/_sd\.m3u8/, '_hd.m3u8'); if (!c.sources.some(y => y.url === u) && !hd.some(y => y.url === u)) hd.push({ type: 'hls', url: u, h: 720 }); } });
+    c.sources.unshift(...hd);
     // 방송사 공식 API → 그 밖의 출처는 해상도 높은 순 (모르면 600p로 봄)
     c.sources.sort((a, b) => (srcRank(a) === 3) - (srcRank(b) === 3) || srcH(b) - srcH(a) || srcRank(a) - srcRank(b));
     const best = raw.find(r => c.ids.includes(r.id) && r.type === c.sources[0].type && r.url === c.sources[0].url);
@@ -837,7 +1008,7 @@ function buildChannels(){
   });
   const order = t => TABS.indexOf(t);
   out.sort((a, b) => order(a.tab) - order(b.tab));
-  return out;
+  return window.MW_TV ? out.filter(c => !c.ids.every(i => /^qq_/.test(i))) : out;
 }
 ALL = buildChannels();
 // 예전 즐겨찾기·최근 채널 id를 합쳐진 채널 id로 옮김
@@ -851,6 +1022,7 @@ ALL = buildChannels();
 function filtered(){
   if (chip === YT || chip === SOOP) return [];
   let a = chip === FAV ? ALL.filter(c => favs.includes(c.id)) : (chip === '전체' ? ALL : ALL.filter(c => c.tab === chip));
+  if (window.MWX && !window.MW_TV && chip !== '지역방송' && !query) a = a.filter(c => !MWX.hideRegional(c));
   if (query) a = a.filter(c => {
     const [p] = nowNext(c);
     return (c.name + ' ' + c.group + ' ' + (p ? p[2] : '')).toLowerCase().includes(query);
@@ -875,6 +1047,21 @@ function updateRowProgs(){
   const byId = new Map(ALL.map(c => [c.id, c]));
   document.querySelectorAll('#list .row').forEach(r => { const c = byId.get(r.dataset.id); const box = r.querySelector('.r-progs'); if (c && box) { const h = progsHTML(c); if (box.innerHTML !== h) box.innerHTML = h; } });
 }
+let regOpen = null; // 펼친 지역 묶음 (mbc / sbs)
+function regRowsHTML(c){
+  const f = MWX.family(c) || [];
+  const list = f.map((x, i) => ({ x, i, h: MWX.resOf(x) })).sort((a, b) => (b.h - a.h) || (a.i - b.i)).map(o => o.x);
+  return list.map(x => {
+    const q = MWX.qName(MWX.resOf(x));
+    return `
+    <div class="row sub${cur && cur.id === x.id ? ' on' : ''}" data-id="${esc(x.id)}" role="button" tabindex="0">
+      <span class="r-no">${q || '—'}</span>
+      <span class="r-logo">${logoHTML(x)}</span>
+      <span class="r-body"><span class="r-name" style="display:block">${esc(MWX.isMain(x) ? x.name + ' (서울)' : x.name)}</span><span class="r-progs" style="display:block;min-width:0">${progsHTML(x)}</span></span>
+      <span class="r-play"><svg viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z"/></svg></span>
+    </div>`;
+  }).join('');
+}
 function renderList(){
   if (chip === YT) return renderYt();
   if (chip === SOOP) return renderSoop();
@@ -886,14 +1073,19 @@ function renderList(){
   }
   $('list').innerHTML = shown.map((c, i) => {
     const progs = `<span class="r-progs" style="display:block;min-width:0">${progsHTML(c)}</span>`;
+    const fam = window.MWX && !window.MW_TV && chip !== '지역방송' && MWX.isMain(c) ? MWX.family(c) : null;
+    const famOpen = !!fam && regOpen === MWX.famKey(c);
+    const famBtn = fam ? `<button class="r-reg${famOpen ? ' on' : ''}" data-reg="${esc(MWX.famKey(c))}">지역 ${fam.length - 1} ${famOpen ? '▴' : '▾'}</button>` : '';
+    const famCur = fam && cur && fam.some(x => x.id === cur.id) && cur.id !== c.id;
     return `
-    <div class="row${cur && cur.id === c.id ? ' on' : ''}" data-id="${esc(c.id)}" role="button" tabindex="0">
+    <div class="row${cur && (cur.id === c.id || famCur) ? ' on' : ''}" data-id="${esc(c.id)}" role="button" tabindex="0">
       <span class="r-no">${String(i + 1).padStart(2, '0')}</span>
       <span class="r-logo">${logoHTML(c)}</span>
       <span class="r-body"><span class="r-name" style="display:block">${esc(c.name)}</span>${progs}</span>
+      ${famBtn}
       <button class="r-star${favs.includes(c.id) ? ' on' : ''}" data-fav="${esc(c.id)}" aria-label="즐겨찾기">${favs.includes(c.id) ? '★' : '☆'}</button>
       <span class="r-play"><svg viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z"/></svg></span>
-    </div>`;
+    </div>${famOpen ? regRowsHTML(c) : ''}`;
   }).join('');
 }
 function fmtViews(n){
@@ -976,31 +1168,32 @@ function renderYt(){
       <span class="v-body"><span class="v-title">${esc(v.title)}</span><span class="v-meta" style="display:block">${esc(v.channel)} · ${fmtViews(v.views)} · ${ago(v.at)}</span></span>
     </div>`).join('') : '<div class="empty">검색 결과가 없습니다.</div>');
 }
-// ───────── SOOP 인기 생방송 (앱 전용: 앱이 SOOP API를 직접 부름) ─────────
-const SOOP = '▶ SOOP 인기';
+// ───────── 치지직 인기 생방송 (앱 전용: 앱이 치지직 API를 직접 부름) ─────────
+const SOOP = '◆ 치지직 인기';
 let soopItems = [], soopState = '', soopErr = '', soopAt = 0;
-async function soopApi(url, post){
-  const u = 'https://relay.app/?url=' + encodeURIComponent(url) + (post ? '&post=' + encodeURIComponent(post) : '');
-  const r = await fetch(u, { cache: 'no-store' });
-  if (!r.ok) throw new Error('SOOP 응답 오류 ' + r.status);
-  return r.text();
-}
 async function loadSoop(force){
   if (!force && soopState === 'ok' && Date.now() - soopAt < 3 * 60e3) return;
   soopState = 'loading';
-  try {
-    const j = JSON.parse(await soopApi('https://live.sooplive.co.kr/api/main_broad_list_api.php?selectType=action&orderType=view_cnt&pageNo=1&lang=ko_KR'));
-    soopItems = (j.broad || [])
-      .filter(b => String(b.broad_grade) === '0' && b.is_password !== 'Y' && !Number(b.subscription_only))   // 19세·비번·구독전용 제외
-      .map(b => ({ id: String(b.broad_no), bid: b.user_id, title: b.broad_title, channel: b.user_nick,
-        views: +b.total_view_cnt || 0, cat: b.category_name || '', res: b.broad_resolution || '',
-        thumb: (b.broad_thumb || '').replace(/^\/\//, 'https://') }));
-    soopState = 'ok'; soopAt = Date.now();
-  } catch (e) { soopState = 'err'; soopErr = e.message; }
+  let last = '';
+  for (const u of ['https://api.chzzk.naver.com/service/v1/lives?size=50&sortType=POPULAR', 'https://api.chzzk.naver.com/service/v1/lives?size=50']) {
+    try {
+      const j = JSON.parse(await relGet(u));
+      const data = (j && j.content && (j.content.data || j.content.lives)) || [];
+      if (!data.length) { last = '방송 목록이 비어 있습니다'; continue; }
+      soopItems = data.filter(x => x && x.channel && x.channel.channelId).slice(0, 60).map(x => ({
+        id: String(x.channel.channelId), no: String(x.channel.channelId),
+        title: String(x.liveTitle || '').trim() || '(제목 없음)',
+        channel: String(x.channel.channelName || ''), nick: String(x.channel.channelName || ''),
+        views: +(x.concurrentUserCount || 0), adult: !!x.adult, cat: String(x.liveCategoryValue || ''),
+        thumb: String(x.liveImageUrl || x.channel.channelImageUrl || '').replace('{type}', '480') }));
+      soopState = 'ok'; soopAt = Date.now(); return;
+    } catch (e) { last = e.message; }
+  }
+  soopState = 'err'; soopErr = last || '치지직 방송 목록을 받지 못했습니다';
 }
 function renderSoop(){
   shown = [];
-  $('ovCount').textContent = `SOOP 인기 · ${soopState === 'ok' ? soopItems.length + '개 방송' : '불러오는 중'}`;
+  $('ovCount').textContent = `치지직 인기 · ${soopState === 'ok' ? soopItems.length + '개 방송' : '불러오는 중'}`;
   const head = `<div class="ytcats"><button class="ytcat on" data-soopre="1">↻ 새로고침</button></div>`;
   if (soopState !== 'ok') {
     $('list').innerHTML = head + `<div class="empty">${soopState === 'err' ? '인기 방송을 불러오지 못했습니다: ' + esc(soopErr) : '인기 방송을 불러오는 중…'}</div>`;
@@ -1011,12 +1204,12 @@ function renderSoop(){
   if (query) items = items.filter(v => (v.title + ' ' + v.channel + ' ' + v.cat).toLowerCase().includes(query));
   $('list').innerHTML = head + (items.length ? items.map(v => `
     <div class="vrow${cur && cur.id === 'soop:' + v.id ? ' on' : ''}" data-soop="${esc(v.id)}" role="button" tabindex="0">
-      <span class="v-th"><img src="${esc(v.thumb)}" alt="" loading="lazy"><i class="v-rank">${soopItems.indexOf(v) + 1}</i><b class="live">LIVE</b></span>
+      <span class="v-th"><img src="${esc(v.thumb)}" alt="" loading="lazy"><i class="v-rank">${soopItems.indexOf(v) + 1}</i><b class="live">${v.adult ? '19' : 'LIVE'}</b></span>
       <span class="v-body"><span class="v-title">${esc(v.title)}</span><span class="v-meta" style="display:block">${esc(v.channel)} · ${fmtViews(v.views).replace('회', '명')}${v.cat ? ' · ' + esc(v.cat) : ''}</span></span>
     </div>`).join('') : '<div class="empty">검색 결과가 없습니다.</div>');
 }
 function soopChannel(v){
-  return { id: 'soop:' + v.id, ids: ['soop:' + v.id], name: v.title, logo: v.thumb, group: `${v.channel} · ${fmtViews(v.views).replace('회', '명')}`, tab: SOOP, type: 'soop', url: v.bid + '|' + v.id, sources: [{ type: 'soop', url: v.bid + '|' + v.id }] };
+  return { id: 'soop:' + v.id, ids: ['soop:' + v.id], name: v.title, logo: v.thumb, group: `${v.channel} · ${fmtViews(v.views).replace('회', '명')}`, tab: SOOP, type: 'soop', url: v.id, sources: [{ type: 'chz', url: v.id }] };
 }
 function ytChannel(v){
   return { id: 'yt:' + v.id, ids: ['yt:' + v.id], name: v.title, logo: v.thumb, group: `${v.channel} · ${fmtViews(v.views)}`, tab: YT, type: 'ytv', url: v.id, sources: [{ type: 'ytv', url: v.id }] };
@@ -1117,7 +1310,7 @@ function showErr(title, msg){
   $('skip').onclick = () => step(1);
 }
 function setQ(h){
-  $('ovName').textContent = cur ? (cur.type === 'ytv' ? 'YouTube · ' + cur.name : cur.type === 'soop' ? 'SOOP · ' + cur.name + (h ? ' · ' + h + 'p' : '') : [cur.name, 'LIVE', h ? h + 'p' : ''].filter(Boolean).join(' · ')) : '채널을 선택하세요';
+  $('ovName').textContent = cur ? (cur.type === 'ytv' ? 'YouTube · ' + cur.name : cur.type === 'soop' ? '치지직 · ' + cur.name + (h ? ' · ' + h + 'p' : '') : [cur.name, 'LIVE', h ? h + 'p' : ''].filter(Boolean).join(' · ')) : '채널을 선택하세요';
 }
 function stop(){
   stopCanvas();
@@ -1323,6 +1516,7 @@ function toast(m){ const t = $('toast'); t.textContent = m; t.classList.add('sho
 // ───────── 이벤트 ─────────
 function chipClick(e){
   const b = e.target.closest('.chip'); if (!b) return;
+  if (b.dataset.t === YT && window.TvBridge && window.TvBridge.openYoutube) { openYoutube(); return; }
   chip = b.dataset.t; renderChips();
   if (view === 'guide') renderGuide(true); else { renderList(); updateNow(); }
   const same = e.currentTarget.querySelector(`.chip.on`); if (same) same.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
@@ -1338,6 +1532,8 @@ $('list').onclick = e => {
   if (sv) { const v = soopItems.find(x => x.id === sv.dataset.soop); if (v) { play(soopChannel(v)); if (window.innerWidth < 1000) window.scrollTo({ top: 0, behavior: 'smooth' }); } return; }
   const yv = e.target.closest('[data-yt]');
   if (yv) { const v = ytItems.find(x => x.id === yv.dataset.yt); if (v) { play(ytChannel(v)); if (window.innerWidth < 1000) window.scrollTo({ top: 0, behavior: 'smooth' }); } return; }
+  const rg = e.target.closest('[data-reg]');
+  if (rg) { e.stopPropagation(); regOpen = regOpen === rg.dataset.reg ? null : rg.dataset.reg; renderList(); if (regOpen && window.MWX) MWX.probeFamilies(false).then(() => { if (regOpen) renderList(); }); return; }
   const f = e.target.closest('[data-fav]'); if (f) { e.stopPropagation(); return toggleFav(f.dataset.fav); }
   const r = e.target.closest('.row'); if (!r) return;
   const c = ALL.find(x => x.id === r.dataset.id); if (c) { play(c); if (window.innerWidth < 1000) window.scrollTo({ top: 0, behavior: 'smooth' }); }
@@ -1393,10 +1589,13 @@ document.addEventListener('keydown', e => {
 async function syncM3u(force){
   let changed = null;
   try {
-    changed = await refreshM3u(force);
-    if (changed) {
-      M3U_ITEMS = M3U_STATE.items;
+    let qqChanged = false;
+    try { qqChanged = await refreshQq(force); } catch (e) {}
+    try { changed = await refreshM3u(force); } catch (e) { if (!qqChanged) throw e; changed = false; }
+    if (changed || qqChanged) {
+      if (changed) M3U_ITEMS = M3U_STATE.items;
       setupM3uData(M3U_ITEMS);
+      setupQqData();
       ALL = buildChannels();
       buildIdx(); renderChips();
       if (view === 'live') { renderList(); updateNow(); } else refreshAll();
@@ -1466,7 +1665,7 @@ if (APP) {
       if (/(^|\.)imbc\.com$/.test(h)) return 'https://onair.imbc.com/';
       if (/(^|\.)kbs\.co\.kr$/.test(h)) return 'https://onair.kbs.co.kr/';
       if (/(^|\.)jtbc\.co\.kr$/.test(h)) return 'https://onair.jtbc.co.kr/';
-      if (/(^|\.)sooplive\.(com|co\.kr)$/.test(h)) return 'https://play.sooplive.com/';
+      if (/(^|\.)(pstatic\.net|naver\.com|naver\.net)$/.test(h) && cur && cur.type === 'soop') return 'https://chzzk.naver.com/';
       if (/(^|\.)tvchosun\.com$/.test(h)) return 'http://broadcast.tvchosun.com/onair/on.cstv';
       if (/(^|\.)cinerama\.uz$/.test(h)) return 'https://cinerama.uz/';
     } catch {}
@@ -1566,6 +1765,346 @@ if (APP) {
   };
   window.__appLastId = function () { try { return (AB.getLast && AB.getLast()) || store.get('mw_last', null); } catch { return store.get('mw_last', null); } };
 }
+
+// ───────── TV 모드 (안드로이드 TV · 쉴드TV 리모컨) ─────────
+// 앱(TvKeys)이 리모컨 키를 window.__tvKey(키, 반복횟수)로 넘겨 줍니다. 'exit'를 돌려주면 앱 종료.
+//  전체화면: OK·◀ 채널 목록 · ▲▼/CH± 채널 이동 · ▶ 방송 정보 · 숫자 채널 번호 · 메뉴 설정 · 뒤로 두 번 종료
+//  MBC·SBS: 목록에는 하나만 나오고, 고르면 지역(대전MBC·광주MBC… / KNN·KBC…)을 선택
+const TVMODE = !!window.MW_TV && !!window.AppBridge;
+(() => {
+  const T = id => document.getElementById(id);
+  const SETG = '⚙ 설정';
+  let st = 'closed', col = 'ch', gi = 0, ci = 0, ri = 0, si = 0, G = [], REG = [];
+  let rev = store.get('mw_tv_rev', false), lastH = 0, infoT = 0, numT = 0, menuT = 0, numBuf = '', backAt = 0;
+
+  // ── 채널 묶음: MBC·SBS 지역 방송은 본사 채널 아래로 ──
+  const famKey = c => {
+    if (!c || !c.ids) return null;
+    const r = REGION[c.id] || c.ids.map(i => REGION[i]).find(Boolean);
+    if (r) return r;
+    const n = norm(c.name);
+    if (c.type === 'stvp') return null;
+    const CITY = '(대전|광주|춘천|여수|목포|제주|부산|대구|울산|경남|전주|청주|충북|안동|포항|원주|강릉|삼척|영동|강원|마산|진주|충주)';
+    if (new RegExp('^' + CITY + 'mbc$').test(n) || new RegExp('^mbc' + CITY + '$').test(n)) return 'mbc';
+    if (/^(knn|kbc|ubc|tjb|cjb|jibs|g1|jtv|tbc)(sbs)?$/.test(n) || /^(knn|kbc|ubc|tjb|cjb|jibs|g1|jtv|tbc)/.test(n) && /(sbs|부산|광주|울산|대전|청주|제주|강원|전주|대구)/.test(n)) return 'sbs';
+    if (n === 'mbcnet') return 'mbc';
+    if (n === 'mbc') return 'mbc';
+    if (n === 'sbs') return 'sbs';
+    return null;
+  };
+  const isMain = c => { const n = norm(c.name); return n === 'mbc' || n === 'sbs'; };
+  function family(c){
+    const k = famKey(c); if (!k) return null;
+    const main = ALL.find(x => norm(x.name) === k);
+    const reg = ALL.filter(x => x !== main && famKey(x) === k);
+    return reg.length ? (main ? [main, ...reg] : reg) : null;
+  }
+  // TV 채널 목록 = 지역 방송을 뺀 명왕사신TV 채널
+  const TVL = () => ALL.filter(c => !(famKey(c) && !isMain(c)) || !ALL.some(x => isMain(x) && famKey(x) === famKey(c)));
+  const numOf = c => { if (!c) return 0; const L = TVL(); let i = L.findIndex(x => x.id === c.id); if (i < 0) { const f = family(c); if (f) i = L.findIndex(x => x.id === f[0].id); } return i + 1; };
+  const lg = c => c.logo ? `<img src="${esc(c.logo)}" alt="" onerror="this.replaceWith(document.createTextNode('${esc(c.name.slice(0, 2)).replace(/'/g, '')}'))">` : esc(c.name.slice(0, 2));
+  const isFav = c => !!c.ids && (c.ids.some(i => favs.includes(i)) || favs.includes(c.id));
+  const isVid = c => c && (c.type === 'ytv' || c.type === 'soop');
+  const qName = h => h >= 2000 ? '4K' : h >= 1400 ? '1440p' : h >= 1000 ? '1080p' : h >= 700 ? '720p' : h > 0 ? h + 'p' : '';
+  const setQWeb = setQ;
+  setQ = function (h) { setQWeb(h); lastH = +h || 0; if (lastH) saveRes(cur, lastH); if (!T('tvInfo').hidden) renderInfo(); };
+  const playWeb = play;
+  play = function (c) { lastH = 0; return playWeb(c); };
+
+  // ── 앱 기능 호출 (TvBridge, 끝나면 __tvCb로 결과) ──
+  const tvCbs = {}; let tvCbN = 0;
+  window.__tvCb = (id, v) => { const f = tvCbs[id]; if (f) { delete tvCbs[id]; f(v); } };
+  window.__tvCall = (m, ...a) => new Promise(res => {
+    if (!window.TvBridge || !window.TvBridge[m]) return res(null);
+    const id = 'c' + (++tvCbN); tvCbs[id] = res;
+    try { window.TvBridge[m](...a.map(x => String(x == null ? '' : x)), id); } catch (e) { delete tvCbs[id]; return res(null); }
+    setTimeout(() => window.__tvCb(id, null), 30000);
+  });
+
+  // ── 지역 방송 해상도 (미리 확인 + 실제 재생 결과로 갱신) → 높은 화질 순 정렬 ──
+  const RES = store.get('mw_res', {});
+  const resOf = c => { const r = RES[c.id]; return r && Date.now() - r.t < 7 * 86400e3 ? r.h : 0; };
+  const refOf = u => { try { const h = new URL(u).hostname; if (/(^|\.)sbs\.co\.kr$/.test(h)) return 'https://www.sbs.co.kr/'; if (/(^|\.)imbc\.com$/.test(h)) return 'https://onair.imbc.com/'; if (/(^|\.)kbs\.co\.kr$/.test(h)) return 'https://onair.kbs.co.kr/'; } catch (e) {} return ''; };
+  const saveRes = (c, h) => { if (!c || !h || isVid(c)) return; const o = RES[c.id]; if (o && o.h === h && o.src === 'play') return; RES[c.id] = { h, t: Date.now(), src: 'play' }; store.set('mw_res', RES); };
+  let probing = false;
+  async function probeFamilies(force){
+    if (probing) return; probing = true;
+    try {
+      const seen = new Set(), list = [];
+      ALL.forEach(c => { const f = family(c); if (f) f.forEach(x => { if (!seen.has(x.id)) { seen.add(x.id); list.push(x); } }); });
+      for (const c of list) {
+        const r = RES[c.id];
+        if (!force && r && (r.src === 'play' || Date.now() - r.t < 86400e3)) continue;
+        try {
+          const s = (c.sources || [])[0]; if (!s) continue;
+          const url = await resolveUrl(s, false);
+          const h = +(await window.__tvCall('probeAsync', url, refOf(url))) || 0;
+          if (!(RES[c.id] && RES[c.id].src === 'play')) { RES[c.id] = { h, t: Date.now(), src: 'probe' }; store.set('mw_res', RES); if (st === 'menu' && col === 'reg') renderReg(); }
+        } catch (e) {}
+      }
+    } finally { probing = false; }
+  }
+  if (window.TvBridge) setTimeout(() => probeFamilies(false), 4000);
+  // 휴대폰 화면에서 쓰는 공통 기능
+  window.MWX = { SOOP, famKey, family, isMain, resOf, qName, probeFamilies, loadSoop, soopChannel, saveRes,
+    soop: () => ({ items: soopItems, state: soopState, err: soopErr }),
+    hideRegional: c => famKey(c) && !isMain(c) && ALL.some(x => isMain(x) && famKey(x) === famKey(c)) };
+  if (!TVMODE) {
+    // 휴대폰: 재생 해상도만 기록 (지역 목록 화질순 정렬용)
+    const setQPhone = setQ; setQ = function (h) { setQPhone(h); if (+h) saveRes(cur, +h); };
+    return;
+  }
+  document.documentElement.classList.add('tv');
+
+  // ── 채널 정보 막대 ──
+  function renderInfo(){
+    const c = cur; if (!c) return;
+    const d = new Date(), clk = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    if (isVid(c)) {
+      T('tvInfo').innerHTML = `<div class="lg" style="width:12vw">${c.logo ? `<img src="${esc(c.logo)}" style="max-width:100%;max-height:100%;object-fit:cover">` : ''}</div>
+        <div class="bd"><div class="nm" style="font-size:2vw">${esc(c.name)}</div><div class="pg nx">${esc(c.type === 'soop' ? '치지직 · ' + c.group : '유튜브 · ' + c.group)}</div><div class="hint">${c.type === 'soop' ? '▲▼ 다음 방송 · OK 목록' : '▲▼ 다음 영상 · OK 목록'}</div>${c.type === 'soop' && !frm.hidden && window.__soopErr ? `<div class="pg nx" style="color:#ff9d9d;font-size:1.2vw">재생 실패 이유 → ${esc(window.__soopErr)}</div>` : ''}</div><div class="clk">${clk}</div>`;
+      return;
+    }
+    const [p, n] = nowNext(c);
+    const t = nowSec(), pct = p ? Math.max(0, Math.min(100, (t - p[0]) / (p[1] - p[0]) * 100)) : 0;
+    const q = qName(lastH), f = family(c);
+    T('tvInfo').innerHTML = `<div class="num">${numOf(c) || ''}</div><div class="lg">${lg(c)}</div>
+      <div class="bd"><div class="nm">${esc(c.name)}${isFav(c) ? ' <span style="color:#ffd34d">★</span>' : ''}<span class="meta">${esc(c.tab || c.group || '')}</span>${q ? `<span class="tag">${q}</span>` : ''}${c.sources && c.sources.length > 1 ? `<span class="tag">출처 ${c.sources.length}</span>` : ''}</div>
+      <div class="pg">${p ? `${hm(p[0])}–${hm(p[1])}  ${esc(p[2])}` : '실시간 방송'}</div>
+      ${p ? `<div class="bar"><i style="width:${pct}%"></i></div>` : ''}
+      ${n ? `<div class="pg nx">다음  ${hm(n[0])}–${hm(n[1])}  ${esc(n[2])}</div>` : ''}
+      ${f ? `<div class="hint">OK → 지역 ${f.length - 1}곳 선택 가능</div>` : ''}</div>
+      <div class="clk">${clk}</div>`;
+  }
+  function showInfo(ms){ renderInfo(); T('tvInfo').hidden = false; clearTimeout(infoT); infoT = setTimeout(hideInfo, ms || 5000); }
+  function hideInfo(){ clearTimeout(infoT); T('tvInfo').hidden = true; }
+  window.__tvShowInfo = ms => showInfo(ms);
+  setInterval(() => { if (!T('tvInfo').hidden) renderInfo(); }, 1000);
+
+  // ── 채널 이동 (지역 방송은 건너뜀, 영상 보는 중이면 다음 영상) ──
+  function zap(d){
+    if (cur && cur.type === 'ytv' && ytItems.length) { const i = ytItems.findIndex(v => 'yt:' + v.id === cur.id); const v = ytItems[((i + d) % ytItems.length + ytItems.length) % ytItems.length]; if (v) { play(ytChannel(v)); showInfo(); } return; }
+    if (cur && cur.type === 'soop' && soopItems.length) { const i = soopItems.findIndex(v => 'soop:' + v.no === cur.id); const v = soopItems[((i + d) % soopItems.length + soopItems.length) % soopItems.length]; if (v) { play(soopChannel(v)); showInfo(); } return; }
+    const L = TVL(); if (!L.length) return;
+    const i = numOf(cur) - 1;
+    const c = L[((i < 0 ? 0 : i + d) % L.length + L.length) % L.length];
+    if (c) { play(c); showInfo(); }
+  }
+
+  // ── 숫자 버튼 ──
+  function digit(n){
+    numBuf = (numBuf + n).slice(-4);
+    const c = TVL()[+numBuf - 1];
+    T('tvNum').innerHTML = esc(numBuf) + `<small>${c ? esc(c.name) : '없는 번호'}</small>`;
+    T('tvNum').hidden = false;
+    clearTimeout(numT); numT = setTimeout(numGo, 1800);
+  }
+  function numGo(){
+    clearTimeout(numT);
+    const c = TVL()[+numBuf - 1]; numBuf = ''; T('tvNum').hidden = true;
+    if (c) { play(c); showInfo(); } else toast('없는 채널 번호입니다');
+  }
+
+  // ── 채널 목록: 분류 | 채널 | (지역) ──
+  function groups(){
+    const L = TVL();
+    const g = [{ name: '전체 채널', list: L }];
+    const f = L.filter(isFav); if (f.length) g.push({ name: '★ 즐겨찾기', list: f });
+    TABS.forEach(t => { const l = L.filter(c => c.tab === t); if (l.length) g.push({ name: t, list: l }); });
+    g.push({ name: YT + ' (앱 열기)', app: 'yt' }, { name: SOOP, vid: 'soop' }, { name: SETG, set: true });
+    return g;
+  }
+  const gList = g => !g ? [] : g.vid === 'yt' ? ytItems : g.vid === 'soop' ? soopItems : g.set ? [] : g.list;
+  function renderGrp(){
+    T('tvGrp').innerHTML = G.map((g, i) => `<div class="tv-it${i === gi ? ' sel' : ''}${g.vid || g.set || g.app ? ' grp-x' : ''}"><span class="t">${esc(g.name)}</span><span class="c">${g.list ? g.list.length : ''}</span></div>`).join('');
+  }
+  function vidRow(v, i, yt){
+    const c = yt ? ytChannel(v) : soopChannel(v);
+    const meta = yt ? `${v.channel} · ${fmtViews(v.views)}` : `${v.nick} · ${v.views.toLocaleString()}명`;
+    const badge = yt ? (v.live ? '<b class="live">LIVE</b>' : v.dur ? `<b>${esc(v.dur)}</b>` : '') : (v.adult ? '<b class="live">19</b>' : '<b class="live">LIVE</b>');
+    return `<div class="tv-it vid${i === ci ? ' sel' : ''}${cur && cur.id === c.id ? ' cur' : ''}"><span class="n">${i + 1}</span><span class="th"><img src="${esc(v.thumb)}" alt="" loading="lazy">${badge}</span><span class="t">${esc(v.title)}<small>${esc(meta)}</small></span></div>`;
+  }
+  function renderCh(){
+    const g = G[gi]; if (!g) return;
+    T('tvChTitle').textContent = g.name + (g.vid === 'yt' ? ' · ' + ((YT_CATS.find(x => x[0] === ytCat) || [0, '전체'])[1]) : '');
+    T('tvChHint').textContent = g.vid ? 'OK 재생 · ◀ 분류 · ▲▼ 영상 선택' + (g.vid === 'yt' ? ' · 메뉴 분류 바꾸기' : ' · 메뉴 새로고침') : 'OK 재생 · ◀ 분류 · CH± 10칸 · 메뉴 즐겨찾기';
+    if (g.set) { T('tvCh').innerHTML = '<div class="tv-empty">OK를 누르면 설정이 열립니다.</div>'; return; }
+    if (g.app) { T('tvCh').innerHTML = '<div class="tv-empty">OK를 누르면 유튜브 앱이 열립니다.<br>검색·구독·로그인 등 유튜브 기능을 모두 쓸 수 있고, 뒤로 버튼으로 명왕사신TV에 돌아옵니다.</div>'; return; }
+    if (g.vid) {
+      const stt = g.vid === 'yt' ? ytState : soopState, err = g.vid === 'yt' ? ytErr : soopErr, L = gList(g);
+      if (stt !== 'ok' || !L.length) {
+        T('tvCh').innerHTML = `<div class="tv-empty">${stt === 'err' ? esc(err) : '불러오는 중…'}</div>`;
+        if (stt !== 'loading' && stt !== 'err') (g.vid === 'yt' ? loadYt(false) : loadSoop(false)).then(() => { if (st === 'menu' && G[gi] === g) { renderCh(); sel('tvCh', ci); } });
+        return;
+      }
+      T('tvCh').innerHTML = L.map((v, i) => vidRow(v, i, g.vid === 'yt')).join('');
+      return;
+    }
+    T('tvCh').innerHTML = g.list.map((c, i) => {
+      const [p] = nowNext(c); const f = family(c);
+      const curHere = cur && (c.id === cur.id || (f && f.some(x => x.id === cur.id)));
+      return `<div class="tv-it${i === ci ? ' sel' : ''}${curHere ? ' cur' : ''}${isFav(c) ? ' fav' : ''}"><span class="n">${numOf(c)}</span><span class="l">${lg(c)}</span><span class="t">${esc(c.name)}${p ? `<small>${esc(p[2])}</small>` : ''}</span>${f ? `<span class="tg">지역 ${f.length - 1} ▸</span>` : ''}</div>`;
+    }).join('');
+  }
+  function sel(box, i){
+    const its = T(box).children;
+    for (const e of its) e.classList.remove('sel');
+    const e = its[i]; if (e && e.classList.contains('tv-it')) { e.classList.add('sel'); e.scrollIntoView({ block: 'nearest' }); }
+  }
+  function setCol(c){
+    col = c;
+    T('tvGrpCol').classList.toggle('act', c === 'grp'); T('tvChCol').classList.toggle('act', c === 'ch'); T('tvRegCol').classList.toggle('act', c === 'reg');
+    if (c !== 'reg') T('tvRegCol').hidden = true;
+  }
+  function poke(){ clearTimeout(menuT); menuT = setTimeout(() => { if (st === 'menu') closeMenu(); }, 25000); }
+  let REGK = null;
+  function renderReg(keepId){
+    const selId = keepId !== undefined ? keepId : (REG[ri] && REG[ri].id);
+    const f = REGK ? (family(ALL.find(x => famKey(x) === REGK)) || []) : [];
+    // 해상도 높은 순 (같으면 원래 순서), 모르는 곳은 뒤로
+    REG = f.map((x, i) => ({ x, i, h: resOf(x) })).sort((a, b) => (b.h - a.h) || (a.i - b.i)).map(o => o.x);
+    ri = Math.max(0, REG.findIndex(x => x.id === selId));
+    T('tvReg').innerHTML = REG.map((x, i) => { const [p] = nowNext(x); const q = qName(resOf(x)); return `<div class="tv-it${i === ri ? ' sel' : ''}${cur && x.id === cur.id ? ' cur' : ''}"><span class="l">${lg(x)}</span><span class="t">${esc(isMain(x) ? x.name + ' (서울)' : x.name)}${p ? `<small>${esc(p[2])}</small>` : ''}</span>${q ? `<span class="tg">${q}</span>` : RES[x.id] ? '' : '<span class="tg">확인 중</span>'}</div>`; }).join('');
+    if (st === 'menu' && col === 'reg') sel('tvReg', ri);
+  }
+  function openRegion(c){
+    const f = family(c); if (!f || !f.length) return false;
+    REGK = famKey(c);
+    T('tvRegTitle').textContent = (REGK === 'mbc' ? 'MBC' : 'SBS') + ' 지역 선택 · 화질순';
+    renderReg(cur ? cur.id : null);
+    T('tvRegCol').hidden = false; setCol('reg'); sel('tvReg', ri);
+    probeFamilies(false);
+    return true;
+  }
+  function openMenu(target){
+    hideInfo(); closeSet(); T('tvKeys').hidden = true;
+    G = groups();
+    gi = 0; ci = 0;
+    if (target === 'yt' || target === 'soop') gi = G.findIndex(g => g.vid === target);
+    else if (isVid(cur)) { gi = G.findIndex(g => g.vid === (cur.type === 'soop' ? 'soop' : 'yt')); ci = Math.max(0, gList(G[gi]).findIndex(v => (cur.type === 'soop' ? 'soop:' + v.no : 'yt:' + v.id) === cur.id)); }
+    else ci = Math.max(0, numOf(cur) - 1);
+    renderGrp(); renderCh(); setCol('ch');
+    T('tvMenu').hidden = false; st = 'menu';
+    sel('tvGrp', gi); sel('tvCh', ci); poke();
+    // 지역 채널을 보고 있으면 지역 목록까지 바로 펼침
+    if (!target && cur && family(cur) && !isMain(cur)) openRegion(cur);
+  }
+  function closeMenu(){ clearTimeout(menuT); T('tvMenu').hidden = true; T('tvRegCol').hidden = true; st = 'closed'; }
+  function moveCh(d, wrap){
+    const n = gList(G[gi]).length; if (!n) return;
+    ci = wrap ? ((ci + d) % n + n) % n : Math.max(0, Math.min(n - 1, ci + d));
+    sel('tvCh', ci);
+  }
+  function moveGrp(d){
+    gi = ((gi + d) % G.length + G.length) % G.length; sel('tvGrp', gi);
+    const g = G[gi];
+    ci = g.list ? Math.max(0, g.list.findIndex(c => cur && c.id === cur.id)) : 0;
+    renderCh(); sel('tvCh', ci);
+  }
+  function chooseCh(){
+    const g = G[gi]; if (!g) return;
+    if (g.set) { closeMenu(); openSet(); return; }
+    if (g.app) { closeMenu(); openYoutube(); return; }
+    const L = gList(g); const x = L[ci]; if (!x) return;
+    if (g.vid) { closeMenu(); play(g.vid === 'yt' ? ytChannel(x) : soopChannel(x)); showInfo(); return; }
+    if (family(x) && openRegion(x)) return;
+    closeMenu(); play(x); showInfo();
+  }
+  function favToggle(c){
+    if (!c || isVid(c)) return;
+    const on = isFav(c);
+    favs = on ? favs.filter(i => !c.ids.includes(i) && i !== c.id) : [...favs, c.id];
+    store.set('mw_favs', favs);
+    toast(on ? `${c.name} 즐겨찾기 해제` : `${c.name} 즐겨찾기 추가`);
+    try { renderList(); } catch (e) {}
+  }
+
+  // ── 설정 ──
+  const ytCatName = () => (YT_CATS.find(x => x[0] === ytCat) || [0, '전체'])[1];
+  const SET = [
+    { t: () => '▶ 유튜브 앱 열기', f: () => { closeSet(); openYoutube(); } },
+    { t: () => '◆ 치지직 인기 방송 보기', f: () => { closeSet(); openMenu('soop'); } },
+    { t: () => `채널 방향: ▲ ${rev ? '다음' : '이전'} · ▼ ${rev ? '이전' : '다음'} 채널`, f: () => { rev = !rev; store.set('mw_tv_rev', rev); } },
+    { t: () => cur && isFav(cur) ? '현재 채널 즐겨찾기 해제' : '현재 채널 즐겨찾기 추가', f: () => favToggle(cur) },
+    { t: () => '채널 목록 새로 받기', f: async () => { toast('채널 목록 받는 중…'); const r = await syncM3u(true); toast(r === null ? '채널 목록을 받지 못했습니다' : r ? '채널 목록을 새로 반영했습니다' : '이미 최신 채널 목록입니다'); } },
+    { t: () => '편성표 새로 받기', f: async () => { toast('편성표 받는 중…'); await loadEpg(true); toast('편성표를 새로 받았습니다'); } },
+    { t: () => '현재 채널 다시 연결', f: () => { if (cur) { play(cur); showInfo(); } } },
+    { t: () => '지역 방송 화질 다시 확인', f: () => { toast('지역 방송 화질을 확인합니다'); probeFamilies(true); } },
+    { t: () => '치지직 마지막 오류: ' + (window.__soopErr || '없음'), f: () => {} },
+    { t: () => '리모컨 사용법 보기', f: () => { closeSet(); T('tvKeys').hidden = false; setTimeout(() => T('tvKeys').hidden = true, 8000); } },
+    { t: () => '앱 종료', f: () => 'exit' }
+  ];
+  function renderSet(){ T('tvSetList').innerHTML = SET.map((s, i) => `<div class="tv-it${i === si ? ' sel' : ''}"><span class="t" style="white-space:pre">${esc(s.t())}</span></div>`).join(''); }
+  function openSet(){ hideInfo(); closeMenu(); si = 0; renderSet(); T('tvSet').classList.add('act'); T('tvSet').hidden = false; st = 'set'; }
+  function closeSet(){ T('tvSet').hidden = true; if (st === 'set') st = 'closed'; }
+
+  // ── 리모컨 키 ──
+  window.__tvKey = function (k, rep) {
+    rep = rep || 0;
+    if (/^d\d$/.test(k)) { if (st !== 'closed') { closeMenu(); closeSet(); } digit(k[1]); return; }
+    if (!T('tvNum').hidden && k === 'ok') { numGo(); return; }
+    if (!T('tvNum').hidden && (k === 'back' || k === 'del')) { clearTimeout(numT); numBuf = ''; T('tvNum').hidden = true; return; }
+    if (st === 'menu') {
+      poke();
+      if (col === 'reg') {
+        if (k === 'up') { ri = (ri - 1 + REG.length) % REG.length; sel('tvReg', ri); }
+        else if (k === 'down') { ri = (ri + 1) % REG.length; sel('tvReg', ri); }
+        else if (k === 'ok' || k === 'right') { const x = REG[ri]; closeMenu(); if (x) { play(x); showInfo(); } }
+        else if (k === 'left' || k === 'back') setCol('ch');
+        return;
+      }
+      if (k === 'up') col === 'ch' ? moveCh(-1, true) : moveGrp(-1);
+      else if (k === 'down') col === 'ch' ? moveCh(1, true) : moveGrp(1);
+      else if (k === 'chup') col === 'ch' ? moveCh(-10, false) : moveGrp(-1);
+      else if (k === 'chdown') col === 'ch' ? moveCh(10, false) : moveGrp(1);
+      else if (k === 'left') { if (col === 'ch') setCol('grp'); }
+      else if (k === 'right') { if (col === 'grp') { if (G[gi].set || G[gi].app) chooseCh(); else setCol('ch'); } else { const x = gList(G[gi])[ci]; if (x && !G[gi].vid && family(x)) openRegion(x); } }
+      else if (k === 'ok') { if (col === 'grp') { if (G[gi].set || G[gi].app) chooseCh(); else setCol('ch'); } else chooseCh(); }
+      else if (k === 'menu' || k === 'red') {
+        const g = G[gi];
+        if (g.vid === 'yt') { const i = YT_CATS.findIndex(x => x[0] === ytCat); ytCat = YT_CATS[(i + 1) % YT_CATS.length][0]; store.set('mw_ytcat', ytCat); ytState = ''; ci = 0; renderCh(); toast('유튜브 분류: ' + ytCatName()); }
+        else if (g.vid === 'soop') { soopState = ''; ci = 0; renderCh(); toast('치지직 목록 새로 받는 중'); }
+        else if (g.list) { favToggle(g.list[ci]); const keep = ci, name = g.name; G = groups(); gi = Math.max(0, G.findIndex(x => x.name === name)); renderGrp(); ci = Math.min(keep, Math.max(0, gList(G[gi]).length - 1)); renderCh(); sel('tvGrp', gi); sel('tvCh', ci); }
+      }
+      else if (k === 'back') { if (col === 'grp') setCol('ch'); else closeMenu(); }
+      return;
+    }
+    if (st === 'set') {
+      if (k === 'up') { si = (si - 1 + SET.length) % SET.length; sel('tvSetList', si); }
+      else if (k === 'down') { si = (si + 1) % SET.length; sel('tvSetList', si); }
+      else if (k === 'ok' || k === 'right') { const r = SET[si].f(); if (r === 'exit') return 'exit'; if (st === 'set') { renderSet(); sel('tvSetList', si); } }
+      else if (k === 'back' || k === 'left' || k === 'menu') closeSet();
+      return;
+    }
+    // 전체화면
+    switch (k) {
+      case 'up': if (rep > 0) return; zap(rev ? 1 : -1); return;
+      case 'down': if (rep > 0) return; zap(rev ? -1 : 1); return;
+      case 'chup': if (rep > 0) return; zap(1); return;
+      case 'chdown': if (rep > 0) return; zap(-1); return;
+      case 'ok':
+        // 정보 막대가 떠 있는 MBC·SBS 채널이면 OK로 지역 선택
+        if (!T('tvInfo').hidden && cur && family(cur)) { openMenu(); openRegion(cur); return; }
+        openMenu(); return;
+      case 'left': openMenu(); return;
+      case 'right':
+      case 'info': T('tvInfo').hidden ? showInfo(8000) : hideInfo(); return;
+      case 'menu': openSet(); return;
+      case 'playpause': if (cur) $('bPause').click(); return;
+      case 'red': favToggle(cur); return;
+      case 'back':
+        if (!T('tvInfo').hidden || !T('tvKeys').hidden) { hideInfo(); T('tvKeys').hidden = true; return; }
+        if (Date.now() - backAt < 2500) return 'exit';
+        backAt = Date.now(); toast('뒤로 버튼을 한 번 더 누르면 종료합니다'); return;
+    }
+  };
+  // 첫 실행: 마지막 채널(없으면 1번) 바로 재생, 리모컨 안내 잠깐 표시
+  setTimeout(() => {
+    if (!cur) { const L = TVL(); if (L.length) play(L[0]); }
+    if (cur) showInfo(6000);
+    if (!store.get('mw_tv_seen', false)) { T('tvKeys').hidden = false; setTimeout(() => T('tvKeys').hidden = true, 10000); store.set('mw_tv_seen', true); }
+  }, 300);
+})();
 
 // ───────── 시작 ─────────
 renderChips(); renderList(); updateNow();
