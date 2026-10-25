@@ -96,7 +96,7 @@ async function skylife(now) {
   if (new Date(now + KST).getUTCHours() >= 14) days.push(ymd(now + 86400e3));
   const out = {};
   for (const d of days) {
-    const r = await fetch(`https://www.skylife.co.kr/api/api/public/tv/schedule/${d}`, { headers: { 'User-Agent': UA, Referer: 'https://www.skylife.co.kr/product/tv/channelNo/chart', Accept: 'application/json' } });
+    const r = await fetch(`https://www.skylife.co.kr/apiBaseUrl/api/public/tv/schedule/${d}`, { headers: { 'User-Agent': UA, Referer: 'https://www.skylife.co.kr/product/tv/channelNo/chart', Accept: 'application/json' } });
     if (!r.ok) throw new Error('skylife ' + r.status);
     for (const cat of await r.json()) for (const ch of cat.channels || []) {
       const a = out[ch.name] || (out[ch.name] = []);
