@@ -795,7 +795,7 @@ function toggleFav(id){
 // ───────── 현재 채널 카드 ─────────
 function updateNow(){
   const c = cur;
-  $('nLogo').innerHTML = c ? (c.logo ? `<img src="${esc(c.logo)}" alt="" onerror="this.parentElement.textContent=this.alt">`.replace('alt=""', `alt="${esc(c.name.slice(0, 2))}"`) : esc(c.name.slice(0, 2))) : 'TV';
+  $('nLogo').innerHTML = c ? (c.logo ? `<img src="${esc(c.logo)}" alt="" onerror="this.parentElement&&(this.parentElement.textContent=this.alt)">`.replace('alt=""', `alt="${esc(c.name.slice(0, 2))}"`) : esc(c.name.slice(0, 2))) : 'TV';
   $('nName').textContent = c ? c.name : '명왕사신TV';
   $('nDot').className = 'dot' + (c ? ' live' : '');
   const [p, n] = c ? nowNext(c) : [null, null];
@@ -819,7 +819,7 @@ function tick(){
   $('nClock').textContent = d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
   const [p] = cur ? nowNext(cur) : [null];
   $('nBar').style.width = p ? Math.min(100, (nowSec() - p[0]) / (p[1] - p[0]) * 100) + '%' : '0';
-  if (d.getMinutes() !== lastMin) { if (lastMin !== -1) refreshAll(); lastMin = d.getMinutes(); }
+  if (d.getMinutes() !== lastMin) { const first = lastMin === -1; lastMin = d.getMinutes(); if (!first) refreshAll(); }
 }
 function refreshAll(){
   if (view === 'live') { if (query) renderList(); else updateRowProgs(); updateNow(); }
