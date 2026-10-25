@@ -381,6 +381,9 @@ const PUB = !!(window.AppBridge && AppBridge.isPublic && (() => { try { return A
 const DEFAULT_PROXY = PUB ? '' : 'https://junghwan1570.synology.me:8443'; // 집 NAS 국내 중계
 let TOKEN_PROXY = PUB ? '' : (()=>{ try { const v = localStorage.getItem('mw_proxy'); return v === null ? DEFAULT_PROXY : v; } catch { return DEFAULT_PROXY; } })();
 // 휴대폰이 직접 받기 (앱 안의 중계: CORS 없음, 국내 IP)
+// 치지직 API: 앱이면 앱 중계, 웹이면 NAS 중계 서버(?url=) 경유 (치지직은 브라우저 직접 요청을 막음)
+const chzGet = u => window.AppBridge ? relGet(u) : getText(u, true);
+let chzWeb = false; // 웹에서 중계 서버가 치지직 목록을 돌려주면 true → 탭 표시
 async function relGet(url){
   const r = await fetch('https://relay.app/?url=' + encodeURIComponent(url), { cache: 'no-store' });
   if (!r.ok) throw new Error('HTTP ' + r.status);
@@ -435,11 +438,11 @@ async function resolveUrl(ch, viaProxy){
   if(ch.type === 'chz'){
     // 치지직: 방송 상세 → livePlaybackJson → HLS 주소 (여러 화질이 든 master 재생목록, 앱이 가장 높은 화질 선택)
     const fail = m => { window.__soopErr = m; throw new Error(m); };
-    if (!window.AppBridge) fail('치지직은 명왕사신TV 앱에서만 재생됩니다');
+    if (!window.AppBridge && !TOKEN_PROXY) fail('치지직은 중계 서버가 있어야 재생됩니다 (설정 → 중계 서버)');
     let content = null, last = '';
     for (const v of ['v3', 'v2']) {
       try {
-        const j = JSON.parse(await relGet(`https://api.chzzk.naver.com/service/${v}/channels/${encodeURIComponent(ch.url)}/live-detail`));
+        const j = JSON.parse(await chzGet(`https://api.chzzk.naver.com/service/${v}/channels/${encodeURIComponent(ch.url)}/live-detail`));
         if (j && j.content) { content = j.content; break; }
         last = (j && j.message) || '방송 정보 없음';
       } catch (e) { last = e.message; }
@@ -1030,7 +1033,7 @@ function filtered(){
   return a;
 }
 function chipsHTML(){
-  return ['전체', FAV, YT, ...(window.AppBridge ? [SOOP] : []), ...TABS.filter(t => ALL.some(c => c.tab === t))].map(t => `<button class="chip${t === chip ? ' on' : ''}" data-t="${esc(t)}">${esc(t)}</button>`).join('');
+  return ['전체', FAV, YT, ...(window.AppBridge || chzWeb ? [SOOP] : []), ...TABS.filter(t => ALL.some(c => c.tab === t))].map(t => `<button class="chip${t === chip ? ' on' : ''}" data-t="${esc(t)}">${esc(t)}</button>`).join('');
 }
 function renderChips(){ $('chips').innerHTML = chipsHTML(); $('gchips').innerHTML = chipsHTML(); }
 function logoHTML(c){
@@ -1168,7 +1171,7 @@ function renderYt(){
       <span class="v-body"><span class="v-title">${esc(v.title)}</span><span class="v-meta" style="display:block">${esc(v.channel)} · ${fmtViews(v.views)} · ${ago(v.at)}</span></span>
     </div>`).join('') : '<div class="empty">검색 결과가 없습니다.</div>');
 }
-// ───────── 치지직 인기 생방송 (앱 전용: 앱이 치지직 API를 직접 부름) ─────────
+// ───────── 치지직 인기 생방송 (앱: 앱 중계 / 웹: NAS 중계 서버) ─────────
 const SOOP = '◆ 치지직 인기';
 let soopItems = [], soopState = '', soopErr = '', soopAt = 0;
 async function loadSoop(force){
@@ -1177,7 +1180,7 @@ async function loadSoop(force){
   let last = '';
   for (const u of ['https://api.chzzk.naver.com/service/v1/lives?size=50&sortType=POPULAR', 'https://api.chzzk.naver.com/service/v1/lives?size=50']) {
     try {
-      const j = JSON.parse(await relGet(u));
+      const j = JSON.parse(await chzGet(u));
       const data = (j && j.content && (j.content.data || j.content.lives)) || [];
       if (!data.length) { last = '방송 목록이 비어 있습니다'; continue; }
       soopItems = data.filter(x => x && x.channel && x.channel.channelId).slice(0, 60).map(x => ({
@@ -1186,7 +1189,9 @@ async function loadSoop(force){
         channel: String(x.channel.channelName || ''), nick: String(x.channel.channelName || ''),
         views: +(x.concurrentUserCount || 0), adult: !!x.adult, cat: String(x.liveCategoryValue || ''),
         thumb: String(x.liveImageUrl || x.channel.channelImageUrl || '').replace('{type}', '480') }));
-      soopState = 'ok'; soopAt = Date.now(); return;
+      soopState = 'ok'; soopAt = Date.now();
+      if (!window.AppBridge && !chzWeb) { chzWeb = true; renderChips(); }
+      return;
     } catch (e) { last = e.message; }
   }
   soopState = 'err'; soopErr = last || '치지직 방송 목록을 받지 못했습니다';
@@ -2108,6 +2113,8 @@ const TVMODE = !!window.MW_TV && !!window.AppBridge;
 
 // ───────── 시작 ─────────
 renderChips(); renderList(); updateNow();
+// 웹: 중계 서버가 치지직을 지원하는지 조용히 확인 (지원하면 탭이 나타남)
+if (!window.AppBridge && TOKEN_PROXY) loadSoop(false).catch(() => {});
 setInterval(tick, 1000);
 loadEpg(false);
 setInterval(() => loadEpg(false), 10 * 60 * 1000);
