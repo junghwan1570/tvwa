@@ -269,7 +269,7 @@ html.app .player{background:transparent}
   </div>
   <div class="set-card"><h3>편성표</h3><p id="epgInfo"></p><div class="acts"><button class="btn sec" id="epgReload">편성표 새로 받기</button></div></div>
   <div class="set-card"><h3>채널 정보</h3><p id="chInfo"></p><p id="m3uInfo"></p><div class="acts"><button class="btn sec" id="m3uReload">채널 목록 새로 받기</button></div></div>
-  <div class="set-card" id="appLogCard" hidden><h3>앱 진단 기록</h3><p>재생이 안 될 때 이 부분을 찍어 보내 주세요.</p><pre id="appLogBox" style="white-space:pre-wrap;font-size:12px;color:var(--tx2);max-height:320px;overflow:auto;margin:0"></pre></div>
+  <div class="set-card" id="appLogCard" hidden><h3>앱 진단 기록</h3><p>재생이 안 될 때 이 부분을 찍어 보내 주세요.</p><div class="acts" style="margin-bottom:10px"><button class="btn" id="logSave">로그 파일로 저장</button><button class="btn sec" id="logClear">기록 지우기</button></div><pre id="appLogBox" style="white-space:pre-wrap;font-size:12px;color:var(--tx2);max-height:320px;overflow:auto;margin:0"></pre></div>
 </div>
 
 <nav class="bnav">
@@ -1241,6 +1241,7 @@ if (APP) {
   window.__appLog = (m) => {
     const t = new Date().toLocaleTimeString('ko-KR', { hour12: false });
     appLog.unshift(`${t} ${m}`); if (appLog.length > 40) appLog.pop();
+    try { AB.log && AB.log(m); } catch {}                       // 앱의 로그 파일에도 기록
     const el = $('appLogBox'); if (el) el.textContent = appLog.join('\n');
   };
   addEventListener('error', (e) => window.__appLog('JS 오류: ' + (e.message || e)));
@@ -1347,6 +1348,18 @@ if (APP) {
   }
   window.__syncRect = syncRect;
   $('appLogCard').hidden = false;
+  $('logSave').onclick = () => {
+    const r = AB.exportLog ? AB.exportLog() : '지원하지 않음';
+    if (/^실패/.test(r)) toast('로그 저장 ' + r); else toast('저장했습니다: ' + r);
+    window.__appLog('로그 파일 저장: ' + r);
+  };
+  $('logClear').onclick = () => { if (AB.clearLog) AB.clearLog(); appLog.length = 0; $('appLogBox').textContent = ''; toast('기록을 지웠습니다'); };
+  // 설정을 열 때 앱 로그 파일의 최근 내용을 보여 줌 (앱 쪽 기록까지 포함)
+  const setViewApp = setView;
+  setView = function (v) {
+    setViewApp(v);
+    if (v === 'set' && AB.readLog) { const t = AB.readLog(); if (t) $('appLogBox').textContent = t.trim().split('\n').reverse().slice(0, 80).join('\n'); }
+  };
   addEventListener('scroll', syncRect, { passive: true });
   addEventListener('resize', syncRect);
   if (window.ResizeObserver) new ResizeObserver(syncRect).observe(player);

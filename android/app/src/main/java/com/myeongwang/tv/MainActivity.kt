@@ -2,12 +2,16 @@ package com.myeongwang.tv
 
 import android.annotation.SuppressLint
 import android.app.PictureInPictureParams
+import android.content.ContentValues
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.Outline
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.os.Environment
+import android.provider.MediaStore
 import android.os.Handler
 import android.os.Looper
 import android.util.Rational
@@ -46,8 +50,13 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.hls.HlsMediaSource
 import androidx.media3.ui.PlayerView
 import androidx.webkit.WebViewAssetLoader
+import androidx.webkit.WebViewCompat
 import org.json.JSONObject
 import java.io.ByteArrayInputStream
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import java.net.HttpURLConnection
 import java.net.URL
 import kotlin.math.abs
@@ -79,11 +88,52 @@ class MainActivity : ComponentActivity() {
     private var cornerPx = 0f
 
     private val prefs by lazy { getSharedPreferences("app", MODE_PRIVATE) }
+
+    /* ───────────────────── 진단 기록 (파일) ───────────────────── */
+    private val logFile by lazy { File(filesDir, "applog.txt") }
+    private val logTime = SimpleDateFormat("MM-dd HH:mm:ss.SSS", Locale.KOREA)
+    @Synchronized
+    private fun log(msg: String) {
+        try {
+            if (logFile.length() > 1_000_000) {          // 1MB가 넘으면 뒤쪽 절반만 남김
+                val t = logFile.readText(); logFile.writeText(t.substring(t.length / 2))
+            }
+            logFile.appendText("${logTime.format(Date())}  $msg\n")
+        } catch (e: Exception) { /* 기록 실패는 무시 */ }
+        android.util.Log.d("MyeongwangTV", msg)
+    }
+
+    /** 기록을 '다운로드' 폴더에 txt 파일로 저장하고 경로를 돌려줌 */
+    private fun exportLog(): String {
+        val name = "MyeongwangTV_log_" + SimpleDateFormat("yyyyMMdd_HHmmss", Locale.KOREA).format(Date()) + ".txt"
+        val ver = try { packageManager.getPackageInfo(packageName, 0).versionName } catch (e: Exception) { "?" }
+        val wv = try { WebViewCompat.getCurrentWebViewPackage(this)?.versionName ?: "?" } catch (e: Exception) { "?" }
+        val header = "명왕사신TV $ver · ${Build.MANUFACTURER} ${Build.MODEL} · Android ${Build.VERSION.RELEASE} (SDK ${Build.VERSION.SDK_INT}) · WebView $wv\n" +
+            "저장 시각 ${SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.KOREA).format(Date())}\n\n"
+        val bytes = (header + (if (logFile.exists()) logFile.readText() else "(기록 없음)")).toByteArray(Charsets.UTF_8)
+        if (Build.VERSION.SDK_INT >= 29) {
+            val values = ContentValues().apply {
+                put(MediaStore.Downloads.DISPLAY_NAME, name)
+                put(MediaStore.Downloads.MIME_TYPE, "text/plain")
+                put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+            }
+            val uri = contentResolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values) ?: throw IllegalStateException("파일을 만들 수 없음")
+            contentResolver.openOutputStream(uri)!!.use { it.write(bytes) }
+            return "다운로드/$name"
+        }
+        val dir = getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS) ?: filesDir
+        val f = File(dir, name); f.writeBytes(bytes)
+        return f.absolutePath
+    }
     private val ua = "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Mobile Safari/537.36"
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val ver = try { packageManager.getPackageInfo(packageName, 0).versionName } catch (e: Exception) { "?" }
+        log("──── 앱 시작 $ver · ${Build.MODEL} · Android ${Build.VERSION.RELEASE}")
+        val prev = Thread.getDefaultUncaughtExceptionHandler()
+        Thread.setDefaultUncaughtExceptionHandler { t, e -> log("앱 오류로 종료: ${e.javaClass.simpleName}: ${e.message}\n" + e.stackTrace.take(8).joinToString("\n") { "    at $it" }); prev?.uncaughtException(t, e) }
         root = FrameLayout(this).apply { setBackgroundColor(0xFF0B1018.toInt()) }
         playerView = LayoutInflater.from(this).inflate(R.layout.player_view, root, false) as PlayerView
         playerView.visibility = View.INVISIBLE
@@ -147,7 +197,9 @@ class MainActivity : ComponentActivity() {
                 if (error.errorCode == PlaybackException.ERROR_CODE_BEHIND_LIVE_WINDOW) {
                     player.seekToDefaultPosition(); player.prepare(); return
                 }
-                send("error", JSONObject().put("msg", describe(error)))
+                val m = describe(error)
+                log("재생 오류 #$reqId: $m (${error.errorCodeName})")
+                send("error", JSONObject().put("msg", m))
             }
         })
     }
@@ -155,6 +207,7 @@ class MainActivity : ComponentActivity() {
     private fun sendReady() {
         if (readySent) return
         readySent = true
+        log("재생 시작 #$reqId ${player.videoSize.width}x${player.videoSize.height}")
         send("ready", JSONObject().put("h", player.videoSize.height))
     }
 
@@ -181,6 +234,7 @@ class MainActivity : ComponentActivity() {
     private fun play(url: String, referer: String, id: String) {
         reqId = id
         readySent = false
+        log("재생 요청 #$id ${url.substringBefore('?').take(120)} (Referer ${referer.ifEmpty { "없음" }})")
         val headers = HashMap<String, String>()
         if (referer.isNotEmpty()) { headers["Referer"] = referer; headers["Origin"] = referer.trimEnd('/') }
         val ds = DefaultHttpDataSource.Factory()
@@ -213,6 +267,10 @@ class MainActivity : ComponentActivity() {
             main.post { rx = x; ry = y; rw = w; rh = h; applyRect() }
         }
         @JavascriptInterface fun isApp(): Boolean = true
+        @JavascriptInterface fun log(m: String) { this@MainActivity.log("웹: $m") }
+        @JavascriptInterface fun exportLog(): String = try { this@MainActivity.exportLog() } catch (e: Exception) { "실패: ${e.message}" }
+        @JavascriptInterface fun clearLog() { try { logFile.writeText("") } catch (e: Exception) { } }
+        @JavascriptInterface fun readLog(): String = try { logFile.readText().takeLast(20_000) } catch (e: Exception) { "" }
         // 마지막으로 본 채널 (앱을 완전히 닫아도 남도록 앱 저장소에 바로 기록)
         @JavascriptInterface fun saveLast(id: String) { prefs.edit().putString("last", id).commit() }
         @JavascriptInterface fun getLast(): String = prefs.getString("last", "") ?: ""
@@ -292,10 +350,12 @@ class MainActivity : ComponentActivity() {
                 c.outputStream.use { it.write(post.toByteArray(Charsets.UTF_8)) }
             }
             val code = c.responseCode
+            log("중계 ${if (post != null) "POST" else "GET"} $host → $code")
             val body = (if (code < 400) c.inputStream else c.errorStream)?.readBytes() ?: ByteArray(0)
             val type = (c.contentType ?: "text/plain").substringBefore(';').trim()
             WebResourceResponse(type, "utf-8", code, if (code < 400) "OK" else "Error", cors, ByteArrayInputStream(body))
         } catch (e: Exception) {
+            log("중계 실패 $host: ${e.javaClass.simpleName}: ${e.message}")
             WebResourceResponse("text/plain", "utf-8", 502, "Bad Gateway", cors, ByteArrayInputStream((e.message ?: "error").toByteArray()))
         }
     }
@@ -369,6 +429,7 @@ class MainActivity : ComponentActivity() {
     override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: Configuration) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
         inPip = isInPictureInPictureMode
+        log(if (inPip) "작은 창(PIP) 시작" else "작은 창(PIP) 끝")
         if (inPip) { web.visibility = View.GONE; fillScreen() }
         else if (fullscreen) fillScreen()
         else { web.visibility = View.VISIBLE; playerView.invalidateOutline(); applyRect() }
@@ -378,6 +439,7 @@ class MainActivity : ComponentActivity() {
         super.onStop()
         // 작은 창이 아니면 화면을 떠날 때 잠시 멈춤
         if (!inPip && player.playWhenReady) { pausedByStop = true; player.playWhenReady = false }
+        log("화면 떠남 (재생 ${if (pausedByStop) "일시정지" else "유지"})")
     }
 
     override fun onStart() {

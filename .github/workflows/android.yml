@@ -28,6 +28,13 @@ jobs:
         with:
           gradle-version: '8.9'
 
+      # 비밀값이 없을 때 쓰는 임시(디버그) 키를 빌드마다 새로 만들지 않고 보관해 재사용
+      # → 같은 키로 서명돼 업데이트 설치가 됨 (7일 넘게 빌드가 없으면 GitHub가 지울 수 있음)
+      - uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: android-debug-keystore-v1
+
       - name: Signing key (GitHub secret)
         env:
           KS: ${{ secrets.ANDROID_KEYSTORE_B64 }}
