@@ -589,7 +589,7 @@ let ALL = [];
 const FAV = '★ 즐겨찾기';
 const YT = '▶ 유튜브 인기';
 const YT_CATS = [['0', '전체'], ['10', '음악'], ['24', '엔터'], ['23', '코미디'], ['20', '게임'], ['17', '스포츠'], ['25', '뉴스'], ['22', '인물·블로그']];
-let ytCat = store.get('mw_ytcat', '0'), ytItems = [], ytState = '', ytErr = '';
+let ytCat = store.get('mw_ytcat', '0'), ytItems = [], ytState = '', ytErr = '', ytBusy = false;
 const ytMem = {};
 let view = 'live', chip = '전체', query = '';
 let shown = [];
@@ -775,25 +775,33 @@ async function loadYt(force){
   const m = ytMem[ytCat];
   if (!force && m && Date.now() - m.t < 10 * 60e3) { ytItems = m.items; ytState = 'ok'; return; }
   if (!TOKEN_PROXY) { ytState = 'err'; ytErr = '설정에서 중계 서버(NAS) 주소를 넣어야 볼 수 있습니다.'; return; }
-  ytState = 'loading';
+  const bg = ytState === 'ok' && ytItems.length;   // 목록이 보이는 중이면 뒤에서 조용히 갱신
+  if (!bg) ytState = 'loading';
   try {
-    const r = await fetch(`${TOKEN_PROXY}?yt=popular&cat=${ytCat}`);
+    const r = await fetch(`${TOKEN_PROXY}?yt=popular&cat=${ytCat}`, { cache: 'no-store' });
     const j = await r.json();
     if (!r.ok || j.error) throw new Error(j.error || ('HTTP ' + r.status));
     ytItems = j.items || []; ytMem[ytCat] = { t: Date.now(), items: ytItems }; ytState = 'ok';
   } catch (e) {
+    if (bg) return;                                  // 갱신 실패: 보던 목록 유지
     ytState = 'err';
     ytErr = /YT_API_KEY/.test(e.message) ? 'NAS의 docker-compose.yml에 YouTube API 키(YT_API_KEY)를 넣고 컨테이너를 다시 시작하세요.' : '인기 영상을 불러오지 못했습니다: ' + e.message;
   }
 }
 function renderYt(){
   shown = [];
-  const cats = `<div class="ytcats">${YT_CATS.map(([id, n]) => `<button class="ytcat${id === ytCat ? ' on' : ''}" data-ytcat="${id}">${n}</button>`).join('')}</div>`;
+  const cats = `<div class="ytcats">${YT_CATS.map(([id, n]) => `<button class="ytcat${id === ytCat ? ' on' : ''}" data-ytcat="${id}">${n}</button>`).join('')}<button class="ytcat" data-ytre="1">↻</button></div>`;
   $('ovCount').textContent = `유튜브 인기 · ${ytState === 'ok' ? ytItems.length + '개 영상' : '불러오는 중'}`;
   if (ytState !== 'ok') {
     $('list').innerHTML = cats + `<div class="empty">${ytState === 'err' ? esc(ytErr) : '인기 영상을 불러오는 중…'}</div>`;
     if (!ytState) loadYt(false).then(() => chip === YT && renderYt());
     return;
+  }
+  // 받은 지 10분이 지났으면 뒤에서 새로 받아 바꿔 줌 (탭을 다시 열 때마다 확인)
+  const m = ytMem[ytCat];
+  if (!ytBusy && (!m || Date.now() - m.t > 10 * 60e3)) {
+    ytBusy = true;
+    loadYt(true).finally(() => { ytBusy = false; if (chip === YT) renderYt(); });
   }
   let items = ytItems;
   if (query) items = items.filter(v => (v.title + ' ' + v.channel).toLowerCase().includes(query));
@@ -1152,6 +1160,7 @@ function chipClick(e){
 $('chips').onclick = chipClick;
 $('gchips').onclick = chipClick;
 $('list').onclick = e => {
+  if (e.target.closest('[data-ytre]')) { ytState = ''; delete ytMem[ytCat]; renderYt(); return; }
   const yc = e.target.closest('[data-ytcat]');
   if (yc) { ytCat = yc.dataset.ytcat; store.set('mw_ytcat', ytCat); ytState = ''; renderYt(); return; }
   if (e.target.closest('[data-soopre]')) { soopState = ''; renderSoop(); loadSoop(true).then(() => chip === SOOP && renderSoop()); return; }
