@@ -57,13 +57,17 @@ jobs:
         working-directory: android
         run: gradle assembleRelease --no-daemon --stacktrace
 
-      - name: Name the APK
-        run: cp android/app/build/outputs/apk/release/app-release.apk MyeongwangTV.apk
+      - name: Name the APKs
+        run: |
+          cp android/app/build/outputs/apk/full/release/app-full-release.apk MyeongwangTV.apk
+          cp android/app/build/outputs/apk/pub/release/app-pub-release.apk MyeongwangTV-Public.apk
 
       - uses: actions/upload-artifact@v4
         with:
           name: MyeongwangTV
-          path: MyeongwangTV.apk
+          path: |
+            MyeongwangTV.apk
+            MyeongwangTV-Public.apk
 
       - name: Publish to the "android-latest" release
         uses: softprops/action-gh-release@v2
@@ -71,7 +75,10 @@ jobs:
           tag_name: android-latest
           name: 명왕사신TV 앱 (최신)
           body: |
-            휴대폰에서 아래 MyeongwangTV.apk를 받아 설치하세요.
+            MyeongwangTV.apk: 기존 앱 (집 NAS 사용)
+            MyeongwangTV-Public.apk: 공개판 (공개 주소만 사용, 유튜브는 설정에서 본인 API 키 입력)
             빌드 ${{ github.run_number }} · ${{ github.sha }}
-          files: MyeongwangTV.apk
+          files: |
+            MyeongwangTV.apk
+            MyeongwangTV-Public.apk
           make_latest: true

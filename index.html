@@ -251,16 +251,23 @@ html.app .player{background:transparent}
 </div>
 
 <div class="set" id="setView" hidden>
-  <div class="set-card">
+  <div class="set-card" id="proxyCard">
     <h3>중계 서버 (Cloudflare Worker)</h3>
     <p>SBS·MBC·삼성TV 재생이 막힐 때 거쳐 가는 주소입니다. 비우면 사용하지 않습니다.</p>
     <input id="proxyIn" type="url" placeholder="https://○○.workers.dev">
     <div class="acts"><button class="btn" id="proxySave">저장</button><button class="btn sec" id="proxyReset">기본값</button></div>
   </div>
-  <div class="set-card">
+  <div class="set-card" id="cvsCard">
     <h3>캔버스 재생</h3>
     <p>영상을 브라우저가 직접 풀어 캔버스에 그립니다. 주행 중에도 재생되고 방송사 원본 화질 그대로입니다. 안 되는 채널은 자동으로 예전 방식으로 재생합니다.</p>
     <div class="acts"><button class="btn" id="cvsToggle">켜짐</button></div>
+  </div>
+  <div class="set-card" id="ytKeyCard" hidden>
+    <h3>유튜브 API 키</h3>
+    <p>유튜브 인기 영상 목록을 받을 때 쓰는 본인의 YouTube Data API v3 키입니다. Google Cloud 콘솔 → API 및 서비스 → 사용자 인증 정보에서 만들 수 있습니다. 키는 이 휴대폰에만 저장됩니다.</p>
+    <input id="ytKeyIn" type="text" autocomplete="off" spellcheck="false" placeholder="AIza…">
+    <div class="acts"><button class="btn" id="ytKeySave">저장</button><button class="btn sec" id="ytKeyDel">지우기</button></div>
+    <p id="ytKeyInfo" style="margin-top:8px"></p>
   </div>
   <div class="set-card">
     <h3>즐겨찾기</h3>
@@ -285,8 +292,16 @@ const EBS=p=>`https://ebsonair.ebs.co.kr/${p}familypc/familypc1m/playlist.m3u8`;
 const KAPI=c=>'https://pwwwapi.kbs.co.kr/api/v1/landing/live/channel_code/'+c;
 
 // 방송사 API가 CORS로 막히면 Cloudflare Worker 주소를 여기에 넣으세요 (예: 'https://tvtoken.내계정.workers.dev')
-const DEFAULT_PROXY = 'https://junghwan1570.synology.me:8443'; // 집 NAS 국내 중계
-let TOKEN_PROXY = (()=>{ try { const v = localStorage.getItem('mw_proxy'); return v === null ? DEFAULT_PROXY : v; } catch { return DEFAULT_PROXY; } })();
+// 공개판 앱: 개인 서버(NAS) 없이 공개 주소만 씀 — 토큰·편성표는 휴대폰이 직접 받고, 유튜브는 사용자 본인 API 키로 받음
+const PUB = !!(window.AppBridge && AppBridge.isPublic && (() => { try { return AppBridge.isPublic(); } catch { return false; } })());
+const DEFAULT_PROXY = PUB ? '' : 'https://junghwan1570.synology.me:8443'; // 집 NAS 국내 중계
+let TOKEN_PROXY = PUB ? '' : (()=>{ try { const v = localStorage.getItem('mw_proxy'); return v === null ? DEFAULT_PROXY : v; } catch { return DEFAULT_PROXY; } })();
+// 휴대폰이 직접 받기 (앱 안의 중계: CORS 없음, 국내 IP)
+async function relGet(url){
+  const r = await fetch('https://relay.app/?url=' + encodeURIComponent(url), { cache: 'no-store' });
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  return r.text();
+}
 
 async function getText(url, viaProxy){
   const u = viaProxy && TOKEN_PROXY ? TOKEN_PROXY + '?url=' + encodeURIComponent(url) : url;
@@ -628,8 +643,60 @@ function nowNext(c){
   if (i >= 0) return [ps[i], ps[i + 1] || null];
   return [null, ps.find(p => p[0] > t) || null];
 }
+const EPG_KST = 9 * 3600e3, EPG_HZ = 12 * 3600e3, EPG_MAXP = 14;
+const kstMs = t => Date.UTC(+t.slice(0, 4), +t.slice(4, 6) - 1, +t.slice(6, 8), +t.slice(8, 10), +t.slice(10, 12), +(t.slice(12, 14) || 0)) - EPG_KST;
+const kstYmd = ms => new Date(ms + EPG_KST).toISOString().slice(0, 10).replace(/-/g, '');
+function epgTrim(list, now){
+  return list.filter(p => p[1] > now && p[0] < now + EPG_HZ).sort((a, b) => a[0] - b[0]).slice(0, EPG_MAXP)
+    .map(p => [Math.round(p[0] / 1000), Math.round(p[1] / 1000), p[2]]);
+}
+async function epgSkylife(now){
+  const days = [kstYmd(now)];
+  if (new Date(now + EPG_KST).getUTCHours() >= 14) days.push(kstYmd(now + 86400e3));
+  const out = {};
+  for (const d of days) {
+    const j = JSON.parse(await relGet(`https://www.skylife.co.kr/apiBaseUrl/api/public/tv/schedule/${d}`));
+    for (const cat of j) for (const ch of cat.channels || []) {
+      const a = out[ch.name] || (out[ch.name] = []);
+      for (const p of ch.programs || []) if (p.startTime && p.endTime) a.push([kstMs(p.startTime), kstMs(p.endTime), p.name]);
+    }
+  }
+  for (const k in out) { out[k] = epgTrim(out[k], now); if (!out[k].length) delete out[k]; }
+  if (!Object.keys(out).length) throw new Error('skylife empty');
+  return out;
+}
+async function epgSamsung(now){
+  const x = await relGet('https://raw.githubusercontent.com/matthuisman/i.mjh.nz/master/SamsungTVPlus/kr.xml'), out = {};
+  const re = /<programme channel="([^"]+)" start="(\d{14}) \+0000" stop="(\d{14}) \+0000">\s*<title>([^<]*)<\/title>/g;
+  const utc = t => Date.UTC(+t.slice(0, 4), +t.slice(4, 6) - 1, +t.slice(6, 8), +t.slice(8, 10), +t.slice(10, 12), +t.slice(12, 14));
+  const un = v => v.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'");
+  let m;
+  while ((m = re.exec(x))) (out[m[1]] || (out[m[1]] = [])).push([utc(m[2]), utc(m[3]), un(m[4])]);
+  for (const k in out) { out[k] = epgTrim(out[k], now); if (!out[k].length) delete out[k]; }
+  return out;
+}
+async function epgDirect(){
+  const now = Date.now(), res = { t: Math.round(now / 1000), tv: {}, stvp: {}, src: [], err: [] };
+  await Promise.all([
+    epgSkylife(now).then(v => { res.tv = v; res.src.push('skylife'); }, e => res.err.push('skylife ' + e.message)),
+    epgSamsung(now).then(v => { res.stvp = v; res.src.push('samsung'); }, e => res.err.push('samsung ' + e.message)),
+  ]);
+  return res;
+}
 async function loadEpg(force){
   const cached = store.get('mw_epg', null);
+  if (PUB) {
+    if (!force && cached && cached.proxy === 'direct' && Date.now() / 1000 - cached.t < 900) { EPG = cached; buildIdx(); return; }
+    try {
+      const j = await epgDirect();
+      if (!j.src.length) throw new Error(j.err.join(', '));
+      j.proxy = 'direct'; EPG = j; store.set('mw_epg', j);
+    } catch (e) {
+      EPG = cached || { t: 0, tv: {}, stvp: {}, src: [], err: ['편성표를 받지 못했습니다: ' + e.message] };
+      if (cached) EPG.err = [...(cached.err || []), '최신 편성표를 받지 못해 이전 자료를 씁니다'];
+    }
+    buildIdx(); refreshAll(); return;
+  }
   if (!force && cached && cached.proxy === TOKEN_PROXY && Date.now() / 1000 - cached.t < 900) { EPG = cached; buildIdx(); return; }
   if (!TOKEN_PROXY) { EPG = cached; buildIdx(); return; }
   try {
@@ -839,17 +906,47 @@ function ago(iso){
   const h = (Date.now() - Date.parse(iso)) / 36e5;
   return h < 1 ? '방금' : h < 24 ? Math.floor(h) + '시간 전' : Math.floor(h / 24) + '일 전';
 }
+function ytKey(){ return (store.get('mw_ytkey', '') || '').trim(); }
+function isoDur(d){
+  const m = /P(?:(\d+)D)?T?(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/.exec(d || '') || [];
+  const h = (+m[1] || 0) * 24 + (+m[2] || 0), mi = +m[3] || 0, sec = +m[4] || 0;
+  return h ? `${h}:${String(mi).padStart(2, '0')}:${String(sec).padStart(2, '0')}` : `${mi}:${String(sec).padStart(2, '0')}`;
+}
+async function ytDirect(cat, key){
+  const u = new URL('https://www.googleapis.com/youtube/v3/videos');
+  u.search = new URLSearchParams({ part: 'snippet,contentDetails,statistics,status', chart: 'mostPopular', regionCode: 'KR', hl: 'ko', maxResults: '50', key });
+  if (cat && cat !== '0') u.searchParams.set('videoCategoryId', cat);
+  let r;
+  try { r = await fetch(u, { cache: 'no-store' }); } catch { throw new Error('유튜브에 연결하지 못했습니다'); }
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) {
+    const why = (j.error && (j.error.errors && j.error.errors[0] && j.error.errors[0].reason)) || '';
+    throw new Error(/keyInvalid|badRequest/.test(why) || r.status === 400 ? 'API 키가 올바르지 않습니다' : /quota/i.test(why) ? '오늘 사용량(할당량)을 다 썼습니다' : /accessNotConfigured|forbidden/i.test(why) || r.status === 403 ? 'API 키에 YouTube Data API v3 사용이 허용되지 않았습니다' : ((j.error && j.error.message) || 'HTTP ' + r.status));
+  }
+  return (j.items || []).filter(v => v.status && v.status.embeddable !== false && !(v.contentDetails && v.contentDetails.regionRestriction && v.contentDetails.regionRestriction.blocked && v.contentDetails.regionRestriction.blocked.includes('KR'))).map(v => ({
+    id: v.id, title: v.snippet.title, channel: v.snippet.channelTitle,
+    views: +(v.statistics && v.statistics.viewCount || 0),
+    dur: isoDur(v.contentDetails && v.contentDetails.duration),
+    live: v.snippet.liveBroadcastContent === 'live',
+    thumb: ((v.snippet.thumbnails || {}).medium || (v.snippet.thumbnails || {}).default || {}).url || `https://i.ytimg.com/vi/${v.id}/mqdefault.jpg`,
+    at: v.snippet.publishedAt,
+  }));
+}
 async function loadYt(force){
   const m = ytMem[ytCat];
   if (!force && m && Date.now() - m.t < 10 * 60e3) { ytItems = m.items; ytState = 'ok'; return; }
-  if (!TOKEN_PROXY) { ytState = 'err'; ytErr = '설정에서 중계 서버(NAS) 주소를 넣어야 볼 수 있습니다.'; return; }
+  if (PUB && !ytKey()) { ytState = 'err'; ytErr = '설정 → 유튜브 API 키에 본인의 YouTube Data API 키를 넣으면 인기 영상을 볼 수 있습니다.'; return; }
+  if (!PUB && !TOKEN_PROXY) { ytState = 'err'; ytErr = '설정에서 중계 서버(NAS) 주소를 넣어야 볼 수 있습니다.'; return; }
   const bg = ytState === 'ok' && ytItems.length;   // 목록이 보이는 중이면 뒤에서 조용히 갱신
   if (!bg) ytState = 'loading';
   try {
-    const r = await fetch(`${TOKEN_PROXY}?yt=popular&cat=${ytCat}`, { cache: 'no-store' });
-    const j = await r.json();
-    if (!r.ok || j.error) throw new Error(j.error || ('HTTP ' + r.status));
-    ytItems = j.items || []; ytMem[ytCat] = { t: Date.now(), items: ytItems }; ytState = 'ok';
+    if (PUB) { ytItems = await ytDirect(ytCat, ytKey()); }
+    else {
+      const r = await fetch(`${TOKEN_PROXY}?yt=popular&cat=${ytCat}`, { cache: 'no-store' });
+      const j = await r.json();
+      if (!r.ok || j.error) throw new Error(j.error || ('HTTP ' + r.status));
+      ytItems = j.items || [];
+    } ytMem[ytCat] = { t: Date.now(), items: ytItems }; ytState = 'ok';
   } catch (e) {
     if (bg) return;                                  // 갱신 실패: 보던 목록 유지
     ytState = 'err';
@@ -983,7 +1080,7 @@ function renderGuide(scrollNow){
   const total = filtered().length;
   $('gnote').textContent = EPG && EPG.t
     ? `${chip} · 편성 정보 있는 채널 ${list.length}/${total}개 · ${new Date(EPG.t * 1000).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })} 기준` + (EPG.err && EPG.err.length ? ' · 일부 실패: ' + EPG.err.join(', ') : '')
-    : (TOKEN_PROXY ? '편성표를 불러오는 중이거나 받지 못했습니다.' : '설정에서 중계 서버를 넣어야 편성표를 받을 수 있습니다.');
+    : (TOKEN_PROXY || PUB ? '편성표를 불러오는 중이거나 받지 못했습니다.' : '설정에서 중계 서버를 넣어야 편성표를 받을 수 있습니다.');
   if (!list.length) { g.innerHTML = '<div class="g-empty">표시할 편성 정보가 없습니다.</div>'; return; }
   CHW = window.innerWidth < 640 ? 112 : 150;
   const t0 = Math.floor(nowSec() / 1800) * 1800; // 지금이 속한 30분부터
@@ -1209,6 +1306,7 @@ function setView(v){
 }
 function updateSettings(){
   $('proxyIn').value = TOKEN_PROXY;
+  if (PUB) { const k = ytKey(); $('ytKeyIn').value = k; $('ytKeyInfo').textContent = k ? '저장된 키가 있습니다.' : '아직 키가 없습니다.'; }
   $('favInfo').textContent = `${favs.length}개 채널을 즐겨찾기했습니다.`;
   const withEpg = ALL.filter(c => progsOf(c)).length;
   $('epgInfo').textContent = EPG && EPG.t
@@ -1271,6 +1369,18 @@ function showCanvasBtn(){
 }
 showCanvasBtn();
 $('cvsToggle').onclick = () => { canvasOn = !canvasOn; store.set('mw_canvas', canvasOn); showCanvasBtn(); toast(canvasOn ? '캔버스 재생을 켰습니다' : '예전 방식(동영상)으로 재생합니다'); if (cur) play(cur); };
+// 앱에서는 웹 전용 설정(중계 서버·캔버스 재생)을 숨김, 공개판은 유튜브 키 설정을 보임
+if (window.AppBridge) { $('proxyCard').hidden = true; $('cvsCard').hidden = true; }
+if (PUB) $('ytKeyCard').hidden = false;
+$('ytKeySave').onclick = async () => {
+  const k = $('ytKeyIn').value.trim();
+  if (!k) return toast('키를 입력하세요');
+  $('ytKeyInfo').textContent = '키를 확인하는 중…';
+  try { await ytDirect('0', k); } catch (e) { $('ytKeyInfo').textContent = '확인 실패: ' + e.message; return; }
+  store.set('mw_ytkey', k); for (const c in ytMem) delete ytMem[c]; ytState = ''; ytItems = [];
+  $('ytKeyInfo').textContent = '확인 완료 · 저장했습니다.'; toast('유튜브 API 키를 저장했습니다');
+};
+$('ytKeyDel').onclick = () => { store.set('mw_ytkey', ''); $('ytKeyIn').value = ''; for (const c in ytMem) delete ytMem[c]; ytState = ''; ytItems = []; updateSettings(); toast('키를 지웠습니다'); };
 $('favClear').onclick = () => { if (!favs.length || !confirm('즐겨찾기를 모두 삭제할까요?')) return; favs = []; store.set('mw_favs', favs); updateSettings(); toast('삭제했습니다'); };
 $('epgReload').onclick = async () => { $('epgInfo').textContent = '받는 중…'; await loadEpg(true); updateSettings(); toast('편성표를 새로 받았습니다'); };
 document.addEventListener('keydown', e => {

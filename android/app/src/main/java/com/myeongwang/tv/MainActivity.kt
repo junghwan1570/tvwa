@@ -278,6 +278,7 @@ class MainActivity : ComponentActivity() {
             main.post { rx = x; ry = y; rw = w; rh = h; applyRect() }
         }
         @JavascriptInterface fun isApp(): Boolean = true
+        @JavascriptInterface fun isPublic(): Boolean = BuildConfig.FLAVOR == "pub"
         @JavascriptInterface fun log(m: String) { this@MainActivity.log("웹: $m") }
         @JavascriptInterface fun exportLog(): String = try { this@MainActivity.exportLog() } catch (e: Exception) { "실패: ${e.message}" }
         @JavascriptInterface fun clearLog() { try { logFile.writeText("") } catch (e: Exception) { } }
@@ -344,14 +345,18 @@ class MainActivity : ComponentActivity() {
             host.endsWith("kbs.co.kr") -> "https://onair.kbs.co.kr/"
             host.endsWith("jtbc.co.kr") -> "https://onair.jtbc.co.kr/"
             host.endsWith("sooplive.com") || host.endsWith("sooplive.co.kr") -> "https://play.sooplive.com/"
+            host.endsWith("skylife.co.kr") -> "https://www.skylife.co.kr/product/tv/channelNo/chart"   // 편성표
+            host == "raw.githubusercontent.com" -> ""                                                  // 삼성TV 편성표
             else -> return WebResourceResponse("text/plain", "utf-8", 403, "Forbidden", cors, ByteArrayInputStream("host not allowed".toByteArray()))
         }
         return try {
             val c = URL(target).openConnection() as HttpURLConnection
-            c.connectTimeout = 8000; c.readTimeout = 10000
+            c.connectTimeout = 8000; c.readTimeout = 20000
             c.setRequestProperty("User-Agent", ua)
-            c.setRequestProperty("Referer", referer)
-            c.setRequestProperty("Origin", referer.trimEnd('/'))
+            if (referer.isNotEmpty()) {
+                c.setRequestProperty("Referer", referer)
+                if (!host.endsWith("skylife.co.kr")) c.setRequestProperty("Origin", referer.split("/").take(3).joinToString("/"))
+            }
             // ?post=… 가 있으면 폼 POST (SOOP 시청 토큰 등)
             val post = u.getQueryParameter("post")
             if (post != null) {
