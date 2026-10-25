@@ -17,6 +17,10 @@ body{color:var(--tx);font:16px/1.45 'Noto Sans KR',-apple-system,BlinkMacSystemF
 button,input{font:inherit;color:inherit}
 button{cursor:pointer;background:none;border:0;-webkit-tap-highlight-color:transparent}
 
+/* 앱 모드: 영상은 화면 뒤의 앱 플레이어가 그리므로 플레이어 칸과 바탕을 투명하게 */
+html.app,html.app body{background:transparent}
+html.app .player{background:transparent}
+
 /* 상단 */
 .top{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:12px;height:calc(var(--top) + env(safe-area-inset-top));padding-top:env(safe-area-inset-top);background:var(--bg)}
 .logo{width:42px;height:42px;flex:none}
@@ -936,7 +940,7 @@ function nativePlay(url, c, ok, fail){
 }
 // ───────── 캔버스 재생 (WebCodecs) ─────────
 const CANVAS_OK = !!(window.H264Player && H264Player.supported() && window.HlsFeeder);
-let canvasOn = CANVAS_OK && store.get('mw_canvas', true);
+let canvasOn = CANVAS_OK && store.get('mw_canvas', true) && !window.AppBridge;
 let cvp = null, sharedAudio = null;
 const cvs = $('cvs');
 function audioCtx(){
@@ -1136,6 +1140,125 @@ $('m3uReload').onclick = async () => {
   toast(r === null ? '채널 목록을 받지 못했습니다' : r ? '채널 목록을 새로 반영했습니다' : '이미 최신 채널 목록입니다');
 };
 
+// ───────── 안드로이드 앱 모드 (명왕사신TV 앱 안에서 열렸을 때) ─────────
+// 앱이 window.AppBridge를 넣어 줌: 영상은 앱의 ExoPlayer가 재생하고, 이 화면은 목록·편성표·조작을 맡음.
+const APP = !!window.AppBridge;
+if (APP) {
+  document.documentElement.classList.add('app');
+  const AB = window.AppBridge;
+  let reqSeq = 0, pending = null, nativePaused = false, nativeOn = false;
+
+  // 방송사 토큰 API는 앱이 직접 받음 (휴대폰 국내 IP, CORS 없음) → NAS 중계 없이도 MBC 재생
+  getText = async function (url) {
+    let res;
+    try { res = await fetch('https://relay.app/?url=' + encodeURIComponent(url), { cache: 'no-store' }); }
+    catch (e) { throw new Error('방송사 API에 연결하지 못했습니다.'); }
+    if (!res.ok) throw new Error('방송사 API 응답 오류 (' + res.status + ')');
+    return res.text();
+  };
+  // 토큰 주소 보관(5분) → 같은 채널로 돌아올 때·미리 받아 둔 이웃 채널은 바로 재생
+  const urlCache = new Map();
+  const resolveRaw = resolveUrl;
+  resolveUrl = async function (s) {
+    const key = s.type + '|' + s.url;
+    const hit = urlCache.get(key);
+    if (hit && Date.now() - hit.t < 5 * 60e3) return hit.u;
+    const u = await resolveRaw(s, false);
+    urlCache.set(key, { u, t: Date.now() });
+    return u;
+  };
+  function prefetchNeighbors(){
+    const list = shown.length ? shown : ALL;
+    const i = cur ? list.findIndex(x => x.id === cur.id) : -1;
+    if (i < 0) return;
+    [list[(i + 1) % list.length], list[(i - 1 + list.length) % list.length]].forEach(c => {
+      const s = c && c.sources && c.sources[0];
+      if (s && /^(sbs|mbc|kbs)$/.test(s.type)) resolveUrl(s).catch(() => {});
+    });
+  }
+  modesFor = () => ['dd'];
+  MODE_NAME.dd = '앱 재생';
+
+  function refererFor(u){
+    try {
+      const h = new URL(u).hostname;
+      if (/(^|\.)sbs\.co\.kr$/.test(h)) return 'https://www.sbs.co.kr/';
+      if (/(^|\.)imbc\.com$/.test(h)) return 'https://onair.imbc.com/';
+      if (/(^|\.)kbs\.co\.kr$/.test(h)) return 'https://onair.kbs.co.kr/';
+    } catch {}
+    return '';
+  }
+  startHls = function (url, c, direct, ok, fail) {
+    const m = /[?&]stream=([^&]+)/.exec(url);
+    if (m) url = decodeURIComponent(m[1]);
+    const id = ++reqSeq;
+    pending = { id, c, ok, fail, done: false };
+    nativePaused = false;
+    AB.play(url, refererFor(url), String(id));
+    setTimeout(() => { if (pending && pending.id === id && !pending.done) { AB.stop(); pending.done = true; fail('20초 동안 화면이 나오지 않음'); } }, 20000);
+  };
+  // 앱이 보내는 재생 상태
+  window.__appEvent = function (e) {
+    if (!pending || String(pending.id) !== String(e.id)) return;
+    const p = pending;
+    if (e.t === 'ready') {
+      nativeOn = true;
+      if (!p.done) { p.done = true; p.ok(); }
+      vid.hidden = true; cvs.hidden = true; phHide(); idleSoon(); syncPause();
+      if (e.h) setQ(e.h);
+      syncRect();
+      prefetchNeighbors();
+    } else if (e.t === 'size') {
+      if (e.h) setQ(e.h);
+    } else if (e.t === 'error') {
+      nativeOn = false;
+      if (p.c === cur && p.c.sources) { // 보관해 둔 토큰이 만료됐을 수 있음 → 비우고 다시
+        p.c.sources.forEach(s => urlCache.delete(s.type + '|' + s.url));
+      }
+      if (!p.done) { p.done = true; p.fail(e.msg || '재생 실패'); }
+      else if (p.c === cur) showErr('재생 끊김', esc(e.msg || '연결이 끊겼습니다.'));
+    }
+  };
+  const stopWeb = stop;
+  stop = function () { pending = null; nativeOn = false; AB.stop(); stopWeb(); };
+  syncPause = function () {
+    const paused = nativeOn ? nativePaused : (cvp ? cvp.isPaused() : vid.paused);
+    $('icPause').innerHTML = paused ? '<path d="M7 4l13 8-13 8z"/>' : '<rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/>';
+  };
+  $('bPause').onclick = () => {
+    if (!cur) return;
+    if (nativeOn) { nativePaused = !nativePaused; AB.setPaused(nativePaused); syncPause(); return; }
+    vid.paused ? vid.play().catch(() => {}) : vid.pause();
+  };
+  $('bFull').onclick = () => { if (nativeOn) AB.setFullscreen(true); };
+  // 영상 자리(플레이어 칸)의 위치를 앱에 알려 줌 → 앱이 그 자리에 영상을 그림
+  let lastRect = '';
+  function syncRect(){
+    const r = player.getBoundingClientRect();
+    const vis = !$('liveView').hidden && r.width > 0;
+    const k = vis ? [r.left, r.top, r.width, r.height].map(v => Math.round(v * 10) / 10).join(',') : 'hidden';
+    if (k === lastRect) return;
+    lastRect = k;
+    if (vis) AB.setRect(r.left, r.top, r.width, r.height); else AB.setRect(0, 0, 0, 0);
+  }
+  window.__syncRect = syncRect;
+  addEventListener('scroll', syncRect, { passive: true });
+  addEventListener('resize', syncRect);
+  if (window.ResizeObserver) new ResizeObserver(syncRect).observe(player);
+  setInterval(syncRect, 500);
+  const setViewWeb = setView;
+  setView = function (v) { setViewWeb(v); requestAnimationFrame(syncRect); };
+  // 앱의 뒤로 가기: 편성표·설정이면 라이브로, 검색 중이면 닫기
+  window.__appBack = function () {
+    if (!$('searchBar').hidden) { $('bSearch').click(); return true; }
+    if (view !== 'live') { setView('live'); return true; }
+    return false;
+  };
+  // 전체화면에서 좌우로 밀면 채널 이동
+  window.__appStep = function (n) { step(n); };
+  window.__appChannelName = function () { return cur ? cur.name : ''; };
+}
+
 // ───────── 시작 ─────────
 renderChips(); renderList(); updateNow();
 setInterval(tick, 1000);
@@ -1146,6 +1269,7 @@ setInterval(() => syncM3u(false), M3U_TTL);
 if (!window.Hls) toast('영상 라이브러리를 불러오지 못했습니다');
 (() => {
   const last = ALL.find(c => c.id === store.get('mw_last', null));
+  if (last && APP) { play(last); scrollToRow(last.id); return; }   // 앱: 마지막 채널 바로 재생
   if (last) {
     phShow(`<h4>최근 시청: ${esc(last.name)}</h4><p>${esc(last.group)}</p><button class="btn" id="resume">▶ 이어 보기</button>`);
     $('resume').onclick = () => play(last);

@@ -1,0 +1,60 @@
+name: Android APK
+
+on:
+  push:
+    branches: [main]
+    paths: ['android/**', 'index.html', '.github/workflows/android.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-apk
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Signing key (GitHub secret)
+        env:
+          KS: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+        run: |
+          if [ -n "$KS" ]; then echo "$KS" | base64 -d > android/release.keystore; echo "고정 키로 서명합니다"; else echo "::warning::ANDROID_KEYSTORE_B64 비밀값이 없어 임시 키로 서명합니다 (업데이트 설치가 안 될 수 있음)"; fi
+
+      - name: Build APK
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+        working-directory: android
+        run: gradle assembleRelease --no-daemon --stacktrace
+
+      - name: Name the APK
+        run: cp android/app/build/outputs/apk/release/app-release.apk MyeongwangTV.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MyeongwangTV
+          path: MyeongwangTV.apk
+
+      - name: Publish to the "android-latest" release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-latest
+          name: 명왕사신TV 앱 (최신)
+          body: |
+            휴대폰에서 아래 MyeongwangTV.apk를 받아 설치하세요.
+            빌드 ${{ github.run_number }} · ${{ github.sha }}
+          files: MyeongwangTV.apk
+          make_latest: true
