@@ -17,6 +17,7 @@ android {
 
     // 서명 키: GitHub 비밀값(ANDROID_KEYSTORE_B64)이 있으면 그 키로, 없으면 임시(디버그) 키로 서명
     val ks = rootProject.file("release.keystore")
+    val tempKs = rootProject.file("ci-temp.keystore")
     signingConfigs {
         create("release") {
             storeFile = ks
@@ -24,12 +25,18 @@ android {
             keyAlias = "myeongwang"
             keyPassword = System.getenv("KEYSTORE_PASSWORD") ?: ""
         }
+        create("temp") {
+            storeFile = tempKs
+            storePassword = "android"
+            keyAlias = "temp"
+            keyPassword = "android"
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
-            signingConfig = if (ks.exists()) signingConfigs.getByName("release") else signingConfigs.getByName("debug")
+            signingConfig = when { ks.exists() -> signingConfigs.getByName("release"); tempKs.exists() -> signingConfigs.getByName("temp"); else -> signingConfigs.getByName("debug") }
         }
     }
     compileOptions {

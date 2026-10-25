@@ -28,18 +28,28 @@ jobs:
         with:
           gradle-version: '8.9'
 
-      # 비밀값이 없을 때 쓰는 임시(디버그) 키를 빌드마다 새로 만들지 않고 보관해 재사용
+      # 비밀값이 없을 때 쓰는 임시 키: 한 번 만들어 GitHub 캐시에 보관하고 계속 재사용
       # → 같은 키로 서명돼 업데이트 설치가 됨 (7일 넘게 빌드가 없으면 GitHub가 지울 수 있음)
       - uses: actions/cache@v4
         with:
-          path: ~/.android/debug.keystore
-          key: android-debug-keystore-v1
+          path: android/ci-temp.keystore
+          key: android-ci-temp-keystore-v1
 
-      - name: Signing key (GitHub secret)
+      - name: Signing key
         env:
           KS: ${{ secrets.ANDROID_KEYSTORE_B64 }}
         run: |
-          if [ -n "$KS" ]; then echo "$KS" | base64 -d > android/release.keystore; echo "고정 키로 서명합니다"; else echo "::warning::ANDROID_KEYSTORE_B64 비밀값이 없어 임시 키로 서명합니다 (업데이트 설치가 안 될 수 있음)"; fi
+          if [ -n "$KS" ]; then
+            echo "$KS" | base64 -d > android/release.keystore; echo "고정 키(비밀값)로 서명합니다"
+          else
+            if [ ! -f android/ci-temp.keystore ]; then
+              keytool -genkeypair -keystore android/ci-temp.keystore -alias temp -keyalg RSA -keysize 2048 -validity 10000 \
+                -storepass android -keypass android -dname "CN=Myeongwang TV temp, C=KR"
+              echo "::warning::임시 키를 새로 만들었습니다 (이번 한 번은 기존 앱을 지우고 설치해야 함)"
+            else
+              echo "보관해 둔 임시 키로 서명합니다"
+            fi
+          fi
 
       - name: Build APK
         env:
