@@ -78,6 +78,7 @@ class MainActivity : ComponentActivity() {
     private var rx = 0f; private var ry = 0f; private var rw = 0f; private var rh = 0f
     private var cornerPx = 0f
 
+    private val prefs by lazy { getSharedPreferences("app", MODE_PRIVATE) }
     private val ua = "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Mobile Safari/537.36"
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -161,7 +162,12 @@ class MainActivity : ComponentActivity() {
         var c: Throwable? = e
         while (c != null) {
             if (c is HttpDataSource.InvalidResponseCodeException) return "거부됨 ${c.responseCode}"
-            if (c is HttpDataSource.HttpDataSourceException) return "연결 실패"
+            if (c is HttpDataSource.HttpDataSourceException) {
+                // 원인을 함께 보여 줌 (시간 초과, 인증서, 주소 오류 등)
+                var root: Throwable = c
+                while (root.cause != null && root.cause !== root) root = root.cause!!
+                return "연결 실패 (${root.javaClass.simpleName}: ${root.message ?: ""})".take(160)
+            }
             c = c.cause
         }
         return when (e.errorCode) {
@@ -207,6 +213,9 @@ class MainActivity : ComponentActivity() {
             main.post { rx = x; ry = y; rw = w; rh = h; applyRect() }
         }
         @JavascriptInterface fun isApp(): Boolean = true
+        // 마지막으로 본 채널 (앱을 완전히 닫아도 남도록 앱 저장소에 바로 기록)
+        @JavascriptInterface fun saveLast(id: String) { prefs.edit().putString("last", id).commit() }
+        @JavascriptInterface fun getLast(): String = prefs.getString("last", "") ?: ""
     }
 
     /** 웹 화면의 플레이어 칸 위치로 영상을 옮김 */
@@ -264,6 +273,7 @@ class MainActivity : ComponentActivity() {
             host.endsWith("sbs.co.kr") -> "https://www.sbs.co.kr/"
             host.endsWith("imbc.com") -> "https://onair.imbc.com/"
             host.endsWith("kbs.co.kr") -> "https://onair.kbs.co.kr/"
+            host.endsWith("jtbc.co.kr") -> "https://onair.jtbc.co.kr/"
             else -> return WebResourceResponse("text/plain", "utf-8", 403, "Forbidden", cors, ByteArrayInputStream("host not allowed".toByteArray()))
         }
         return try {

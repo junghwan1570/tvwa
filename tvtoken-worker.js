@@ -6,6 +6,7 @@ const REFERER = [
   [/(^|\.)sbs\.co\.kr$/, 'https://www.sbs.co.kr/'],
   [/(^|\.)imbc\.com$/, 'https://onair.imbc.com/'],
   [/(^|\.)kbs\.co\.kr$/, 'https://onair.kbs.co.kr/'],
+  [/(^|\.)jtbc\.co\.kr$/, 'https://onair.jtbc.co.kr/'],
 ];
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130 Safari/537.36';
 const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*', 'Access-Control-Expose-Headers': '*' };

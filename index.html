@@ -269,6 +269,7 @@ html.app .player{background:transparent}
   </div>
   <div class="set-card"><h3>편성표</h3><p id="epgInfo"></p><div class="acts"><button class="btn sec" id="epgReload">편성표 새로 받기</button></div></div>
   <div class="set-card"><h3>채널 정보</h3><p id="chInfo"></p><p id="m3uInfo"></p><div class="acts"><button class="btn sec" id="m3uReload">채널 목록 새로 받기</button></div></div>
+  <div class="set-card" id="appLogCard" hidden><h3>앱 진단 기록</h3><p>재생이 안 될 때 이 부분을 찍어 보내 주세요.</p><pre id="appLogBox" style="white-space:pre-wrap;font-size:12px;color:var(--tx2);max-height:320px;overflow:auto;margin:0"></pre></div>
 </div>
 
 <nav class="bnav">
@@ -317,6 +318,16 @@ async function resolveUrl(ch, viaProxy){
     if(/GEO\s*Block/i.test(t)) throw new Error('MBC가 해외 접속으로 판단해 차단했습니다(국내 IP 필요).');
     const u = pickM3u8(t);
     if(!u) throw new Error('MBC 재생 주소(토큰)를 받지 못했습니다.');
+    return u;
+  }
+  if(ch.type === 'jtbc'){
+    // JTBC 공식 온에어 API (국내 IP에서만 주소를 줌, 1080p까지)
+    const t = await getText('https://api.jtbc.co.kr/v1/onair', viaProxy);
+    let u = null;
+    try { const j = JSON.parse(t); if (j.oversea === true || j.block === true) throw new Error('JTBC가 해외 접속으로 판단해 차단했습니다(국내 IP 필요).'); u = j.sources && j.sources.HLS && j.sources.HLS.HD && j.sources.HLS.HD.file; }
+    catch (e) { if (/차단/.test(e.message)) throw e; }
+    u = u || pickM3u8(t);
+    if(!u) throw new Error('JTBC 재생 주소를 받지 못했습니다.');
     return u;
   }
   if(ch.type === 'stvp') return 'https://jmp2.uk/stvp-' + ch.url;
@@ -472,6 +483,7 @@ async function refreshM3u(force){
 
 const DATA = [
  {tab:'공중파',groups:[
+  {g:'JTBC',note:'공식',items:[['jtbc_onair','JTBC','jtbc','onair','free']]},
   {g:'KBS',note:'무료 SD',items:[
    ['kbs1','KBS 1TV','kbs',KAPI('11'),'free'],['kbs2','KBS 2TV','kbs',KAPI('12'),'free'],
    ['kbsw','KBS World','kbs',KAPI('14'),'free'],['kbsl','KBS Life','kbs',KAPI('N93'),'free'],
@@ -643,7 +655,7 @@ function catOf(c){
   return CAT_OF[norm(c.name)] || '교양·경제';
 }
 function srcRank(x){
-  if (/^(kbs|sbs|mbc)$/.test(x.type)) return 0;
+  if (/^(kbs|sbs|mbc|jtbc)$/.test(x.type)) return 0;
   if (x.type === 'yt') return 3;
   if (/760515\.xyz|epg\.pw/.test(x.url)) return 2;
   return 1;
@@ -885,7 +897,7 @@ function stop(){
 // 재생 경로: 토큰을 어디서 받고(d=브라우저 직접, p=중계) 영상을 어디서 받는지(d/p)
 const MODE_NAME = { dd: '직접', dp: '토큰 직접·영상 중계', pp: '토큰·영상 모두 중계', d: '직접', p: '중계' };
 function modesFor(c){
-  let m = /^(sbs|mbc|kbs)$/.test(c.type) ? ['dd', 'dp', 'pp'] : ['d', 'p'];
+  let m = /^(sbs|mbc|kbs|jtbc)$/.test(c.type) ? ['dd', 'dp', 'pp'] : ['d', 'p'];
   if (!TOKEN_PROXY) m = m.filter(x => !x.includes('p'));
   const ok = store.get('mw_mode_' + c.type, null);
   if (ok && m.includes(ok)) m = [ok, ...m.filter(x => x !== ok)];
@@ -1146,7 +1158,15 @@ const APP = !!window.AppBridge;
 if (APP) {
   document.documentElement.classList.add('app');
   const AB = window.AppBridge;
-  let reqSeq = 0, pending = null, nativePaused = false, nativeOn = false;
+  let reqSeq = 0, pending = null, nativePaused = false, nativeOn = false, retries = 0;
+  // 앱 진단 기록 (설정 화면에 보임) — 폰에서 무엇이 실패했는지 확인용
+  const appLog = [];
+  window.__appLog = (m) => {
+    const t = new Date().toLocaleTimeString('ko-KR', { hour12: false });
+    appLog.unshift(`${t} ${m}`); if (appLog.length > 40) appLog.pop();
+    const el = $('appLogBox'); if (el) el.textContent = appLog.join('\n');
+  };
+  addEventListener('error', (e) => window.__appLog('JS 오류: ' + (e.message || e)));
 
   // 방송사 토큰 API는 앱이 직접 받음 (휴대폰 국내 IP, CORS 없음) → NAS 중계 없이도 MBC 재생
   getText = async function (url) {
@@ -1173,7 +1193,7 @@ if (APP) {
     if (i < 0) return;
     [list[(i + 1) % list.length], list[(i - 1 + list.length) % list.length]].forEach(c => {
       const s = c && c.sources && c.sources[0];
-      if (s && /^(sbs|mbc|kbs)$/.test(s.type)) resolveUrl(s).catch(() => {});
+      if (s && /^(sbs|mbc|kbs|jtbc)$/.test(s.type)) resolveUrl(s).catch(() => {});
     });
   }
   modesFor = () => ['dd'];
@@ -1185,6 +1205,7 @@ if (APP) {
       if (/(^|\.)sbs\.co\.kr$/.test(h)) return 'https://www.sbs.co.kr/';
       if (/(^|\.)imbc\.com$/.test(h)) return 'https://onair.imbc.com/';
       if (/(^|\.)kbs\.co\.kr$/.test(h)) return 'https://onair.kbs.co.kr/';
+      if (/(^|\.)jtbc\.co\.kr$/.test(h)) return 'https://onair.jtbc.co.kr/';
     } catch {}
     return '';
   }
@@ -1192,8 +1213,9 @@ if (APP) {
     const m = /[?&]stream=([^&]+)/.exec(url);
     if (m) url = decodeURIComponent(m[1]);
     const id = ++reqSeq;
-    pending = { id, c, ok, fail, done: false };
+    pending = { id, c, ok, fail, done: false, url };
     nativePaused = false;
+    window.__appLog(`재생 요청: ${c.name} → ${url.replace(/\?.*/, '?…').slice(0, 90)}`);
     AB.play(url, refererFor(url), String(id));
     setTimeout(() => { if (pending && pending.id === id && !pending.done) { AB.stop(); pending.done = true; fail('20초 동안 화면이 나오지 않음'); } }, 20000);
   };
@@ -1202,7 +1224,8 @@ if (APP) {
     if (!pending || String(pending.id) !== String(e.id)) return;
     const p = pending;
     if (e.t === 'ready') {
-      nativeOn = true;
+      nativeOn = true; retries = 0;
+      window.__appLog(`재생 시작: ${p.c.name} (${e.h || '?'}p)`);
       if (!p.done) { p.done = true; p.ok(); }
       vid.hidden = true; cvs.hidden = true; phHide(); idleSoon(); syncPause();
       if (e.h) setQ(e.h);
@@ -1212,11 +1235,14 @@ if (APP) {
       if (e.h) setQ(e.h);
     } else if (e.t === 'error') {
       nativeOn = false;
-      if (p.c === cur && p.c.sources) { // 보관해 둔 토큰이 만료됐을 수 있음 → 비우고 다시
-        p.c.sources.forEach(s => urlCache.delete(s.type + '|' + s.url));
-      }
+      window.__appLog(`재생 오류: ${p.c.name} · ${e.msg || ''}`);
+      if (p.c.sources) p.c.sources.forEach(s => urlCache.delete(s.type + '|' + s.url)); // 토큰 만료 대비
       if (!p.done) { p.done = true; p.fail(e.msg || '재생 실패'); }
-      else if (p.c === cur) showErr('재생 끊김', esc(e.msg || '연결이 끊겼습니다.'));
+      else if (p.c === cur) {
+        // 보던 중 끊김: 새 토큰으로 3번까지 조용히 다시 연결
+        if (retries < 3) { retries++; toast(`다시 연결 중… (${retries}/3)`); setTimeout(() => { if (p.c === cur) play(cur); }, 800 * retries); }
+        else { retries = 0; showErr('재생 끊김', esc(e.msg || '연결이 끊겼습니다.')); }
+      }
     }
   };
   const stopWeb = stop;
@@ -1242,6 +1268,7 @@ if (APP) {
     if (vis) AB.setRect(r.left, r.top, r.width, r.height); else AB.setRect(0, 0, 0, 0);
   }
   window.__syncRect = syncRect;
+  $('appLogCard').hidden = false;
   addEventListener('scroll', syncRect, { passive: true });
   addEventListener('resize', syncRect);
   if (window.ResizeObserver) new ResizeObserver(syncRect).observe(player);
@@ -1257,6 +1284,12 @@ if (APP) {
   // 전체화면에서 좌우로 밀면 채널 이동
   window.__appStep = function (n) { step(n); };
   window.__appChannelName = function () { return cur ? cur.name : ''; };
+  const playWeb = play;
+  play = function (c) {
+    if (c && c.id && !/^yt:/.test(c.id) && AB.saveLast) { try { AB.saveLast(c.id); } catch {} }
+    return playWeb(c);
+  };
+  window.__appLastId = function () { try { return (AB.getLast && AB.getLast()) || store.get('mw_last', null); } catch { return store.get('mw_last', null); } };
 }
 
 // ───────── 시작 ─────────
@@ -1269,7 +1302,12 @@ setInterval(() => syncM3u(false), M3U_TTL);
 if (!window.Hls) toast('영상 라이브러리를 불러오지 못했습니다');
 (() => {
   const last = ALL.find(c => c.id === store.get('mw_last', null));
-  if (last && APP) { play(last); scrollToRow(last.id); return; }   // 앱: 마지막 채널 바로 재생
+  if (APP) {                                                         // 앱: 마지막 채널 바로 재생
+    const id = window.__appLastId();
+    const lc = ALL.find(c => c.id === id) || last;
+    window.__appLog('앱 시작 · 마지막 채널: ' + (lc ? lc.name : '없음'));
+    if (lc) { play(lc); setTimeout(() => scrollToRow(lc.id), 300); return; }
+  }
   if (last) {
     phShow(`<h4>최근 시청: ${esc(last.name)}</h4><p>${esc(last.group)}</p><button class="btn" id="resume">▶ 이어 보기</button>`);
     $('resume').onclick = () => play(last);
