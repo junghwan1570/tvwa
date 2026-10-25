@@ -314,7 +314,7 @@ async function resolveUrl(ch, viaProxy){
     return u;
   }
   if(ch.type === 'mbc'){
-    const t = await getText(`https://mediaapi.imbc.com/Player/OnAirURLUtil?type=m&ch=${ch.url}`, viaProxy);
+    const t = await getText(`https://mediaapi.imbc.com/Player/OnAirURLUtil?type=pc&ch=${ch.url}`, viaProxy);
     if(/GEO\s*Block/i.test(t)) throw new Error('MBC가 해외 접속으로 판단해 차단했습니다(국내 IP 필요).');
     const u = pickM3u8(t);
     if(!u) throw new Error('MBC 재생 주소(토큰)를 받지 못했습니다.');
@@ -666,6 +666,19 @@ function catOf(c){
   if (/^한국영화/.test(c.name)) return '영화';
   return CAT_OF[norm(c.name)] || '교양·경제';
 }
+// 출처별 실제 최고 해상도 (2026-10-25 국내 IP로 확인) — 모르면 주소로 추정
+function srcH(x){
+  if (x.h) return x.h;
+  if (x.type === 'sbs' || x.type === 'mbc' || x.type === 'kbs') return 720;
+  if (x.type === 'jtbc') return 360; // 비로그인 공식 스트림은 360p뿐
+  const u = x.url || '';
+  if (/ebsonair|EBS/i.test(u)) return 400;
+  if (/760515\.xyz/.test(u)) return 540;
+  if (/1080|fhd/i.test(u)) return 1080;
+  if (/_sd[._/]|500k|_pre_sd/i.test(u)) return 480;
+  if (/720|_hd[._/]/i.test(u)) return 720;
+  return 600;
+}
 function srcRank(x){
   if (/^(kbs|sbs|mbc|jtbc)$/.test(x.type)) return 0;
   if (x.type === 'yt') return 3;
@@ -746,7 +759,7 @@ function buildChannels(){
   });
   out.forEach(c => {
     // 방송사 공식 API → 그 밖의 출처는 해상도 높은 순 (모르면 600p로 봄)
-    c.sources.sort((a, b) => srcRank(a) - srcRank(b) || ((b.h || 600) - (a.h || 600)));
+    c.sources.sort((a, b) => (srcRank(a) === 3) - (srcRank(b) === 3) || srcH(b) - srcH(a) || srcRank(a) - srcRank(b));
     const best = raw.find(r => c.ids.includes(r.id) && r.type === c.sources[0].type && r.url === c.sources[0].url);
     if (best && srcRank(c.sources[0]) <= 1) c.name = best.name;
     c.type = c.sources[0].type; c.url = c.sources[0].url;
@@ -1118,10 +1131,14 @@ function startHlsVideo(url, c, direct, ok, fail){
     return showErr('재생 불가', '이 브라우저는 HLS 재생을 지원하지 않습니다.');
   }
   let settled = false;
-  hls = new Hls({ enableWorker: true, manifestLoadingMaxRetry: 1, levelLoadingMaxRetry: 1, maxBufferLength: 20, maxMaxBufferLength: 30, backBufferLength: 10 });
+  hls = new Hls({ enableWorker: true, capLevelToPlayerSize: false, abrEwmaDefaultEstimate: 20e6, manifestLoadingMaxRetry: 1, levelLoadingMaxRetry: 1, maxBufferLength: 20, maxMaxBufferLength: 30, backBufferLength: 10 });
   hls.loadSource(url);
   hls.attachMedia(vid);
-  hls.on(Hls.Events.MANIFEST_PARSED, () => {
+  hls.on(Hls.Events.MANIFEST_PARSED, (e, d) => {
+    // 항상 가장 높은 화질로 고정 (자동 화질 낮춤 끔)
+    const lv = (d && d.levels) || hls.levels || [];
+    let top = -1; lv.forEach((l, i) => { if (top < 0 || (l.height || 0) > (lv[top].height || 0) || ((l.height || 0) === (lv[top].height || 0) && (l.bitrate || 0) > (lv[top].bitrate || 0))) top = i; });
+    if (top >= 0) { hls.startLevel = top; hls.loadLevel = top; }
     settled = true; ok();
     vid.play().catch(() => { phShow('<h4>재생 준비 완료</h4><button class="btn" id="tapPlay">▶ 재생</button>'); $('tapPlay').onclick = () => { phHide(); vid.play(); }; });
   });

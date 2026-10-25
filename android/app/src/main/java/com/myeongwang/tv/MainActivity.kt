@@ -46,6 +46,8 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.datasource.HttpDataSource
 import androidx.media3.exoplayer.DefaultLoadControl
+import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
+import androidx.media3.exoplayer.upstream.DefaultBandwidthMeter
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.hls.HlsMediaSource
 import androidx.media3.ui.PlayerView
@@ -175,7 +177,16 @@ class MainActivity : ComponentActivity() {
             .setBufferDurationsMs(10_000, 30_000, 600, 1_500)
             .setPrioritizeTimeOverSizeThresholds(true)
             .build()
-        player = ExoPlayer.Builder(this).setLoadControl(load).build()
+        // 항상 기기가 재생할 수 있는 가장 높은 화질로 고정 (망 속도로 화질을 낮추지 않음)
+        val selector = DefaultTrackSelector(this).apply {
+            setParameters(buildUponParameters()
+                .setForceHighestSupportedBitrate(true)
+                .setMaxVideoSize(Int.MAX_VALUE, Int.MAX_VALUE)
+                .setMaxVideoBitrate(Int.MAX_VALUE)
+                .clearViewportSizeConstraints())
+        }
+        val meter = DefaultBandwidthMeter.Builder(this).setInitialBitrateEstimate(20_000_000L).build()
+        player = ExoPlayer.Builder(this).setLoadControl(load).setTrackSelector(selector).setBandwidthMeter(meter).build()
         playerView.player = player
         player.addListener(object : Player.Listener {
             override fun onRenderedFirstFrame() { sendReady() }
