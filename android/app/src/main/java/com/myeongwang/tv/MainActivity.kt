@@ -274,6 +274,7 @@ class MainActivity : ComponentActivity() {
             host.endsWith("imbc.com") -> "https://onair.imbc.com/"
             host.endsWith("kbs.co.kr") -> "https://onair.kbs.co.kr/"
             host.endsWith("jtbc.co.kr") -> "https://onair.jtbc.co.kr/"
+            host.endsWith("sooplive.com") || host.endsWith("sooplive.co.kr") -> "https://play.sooplive.com/"
             else -> return WebResourceResponse("text/plain", "utf-8", 403, "Forbidden", cors, ByteArrayInputStream("host not allowed".toByteArray()))
         }
         return try {
@@ -282,6 +283,14 @@ class MainActivity : ComponentActivity() {
             c.setRequestProperty("User-Agent", ua)
             c.setRequestProperty("Referer", referer)
             c.setRequestProperty("Origin", referer.trimEnd('/'))
+            // ?post=… 가 있으면 폼 POST (SOOP 시청 토큰 등)
+            val post = u.getQueryParameter("post")
+            if (post != null) {
+                c.requestMethod = "POST"
+                c.doOutput = true
+                c.setRequestProperty("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
+                c.outputStream.use { it.write(post.toByteArray(Charsets.UTF_8)) }
+            }
             val code = c.responseCode
             val body = (if (code < 400) c.inputStream else c.errorStream)?.readBytes() ?: ByteArray(0)
             val type = (c.contentType ?: "text/plain").substringBefore(';').trim()

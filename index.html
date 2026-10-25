@@ -330,6 +330,17 @@ async function resolveUrl(ch, viaProxy){
     if(!u) throw new Error('JTBC 재생 주소를 받지 못했습니다.');
     return u;
   }
+  if(ch.type === 'soop'){
+    // SOOP 생방송: 시청 토큰(AID) + 스트림 서버 주소 → auth_playlist.m3u8?aid=…
+    const [bid, bno] = ch.url.split('|');
+    const form = new URLSearchParams({ bid, bno, type: 'aid', pwd: '', player_type: 'html5', stream_type: 'common', quality: 'original', mode: 'landing', from_api: '0', is_revive: 'false' }).toString();
+    const a = JSON.parse(await soopApi('https://live.sooplive.co.kr/afreeca/player_live_api.php?bjid=' + encodeURIComponent(bid), form));
+    const aid = a && a.CHANNEL && a.CHANNEL.AID;
+    if (!aid) throw new Error('SOOP 방송이 끝났거나 시청할 수 없습니다 (' + (a && a.CHANNEL ? a.CHANNEL.RESULT : '?') + ')');
+    const s = JSON.parse(await soopApi('https://livestream-manager.sooplive.com/broad_stream_assign.html?return_type=gcp_cdn&use_cors=false&cors_origin_url=play.sooplive.com&broad_key=' + bno + '-common-original-hls'));
+    if (!s.view_url) throw new Error('SOOP 스트림 주소를 받지 못했습니다');
+    return s.view_url + '?aid=' + encodeURIComponent(aid);
+  }
   if(ch.type === 'stvp') return 'https://jmp2.uk/stvp-' + ch.url;
   return ch.url;
 }
@@ -610,7 +621,7 @@ function progsOf(c){
   return epgIdx[n] || epgIdx[n.replace(/1$/, '')] || epgIdx[n + '1'] || null;
 }
 function nowNext(c){
-  if (c.type === 'ytv') return [null, null];
+  if (c.type === 'ytv' || c.type === 'soop') return [null, null];
   const ps = progsOf(c); if (!ps) return [null, null];
   const t = nowSec();
   const i = ps.findIndex(p => p[0] <= t && t < p[1]);
@@ -703,7 +714,7 @@ ALL = buildChannels();
 
 // ───────── 목록 ─────────
 function filtered(){
-  if (chip === YT) return [];
+  if (chip === YT || chip === SOOP) return [];
   let a = chip === FAV ? ALL.filter(c => favs.includes(c.id)) : (chip === '전체' ? ALL : ALL.filter(c => c.tab === chip));
   if (query) a = a.filter(c => {
     const [p] = nowNext(c);
@@ -712,7 +723,7 @@ function filtered(){
   return a;
 }
 function chipsHTML(){
-  return ['전체', FAV, YT, ...TABS.filter(t => ALL.some(c => c.tab === t))].map(t => `<button class="chip${t === chip ? ' on' : ''}" data-t="${esc(t)}">${esc(t)}</button>`).join('');
+  return ['전체', FAV, YT, ...(window.AppBridge ? [SOOP] : []), ...TABS.filter(t => ALL.some(c => c.tab === t))].map(t => `<button class="chip${t === chip ? ' on' : ''}" data-t="${esc(t)}">${esc(t)}</button>`).join('');
 }
 function renderChips(){ $('chips').innerHTML = chipsHTML(); $('gchips').innerHTML = chipsHTML(); }
 function logoHTML(c){
@@ -731,6 +742,7 @@ function updateRowProgs(){
 }
 function renderList(){
   if (chip === YT) return renderYt();
+  if (chip === SOOP) return renderSoop();
   shown = filtered();
   $('ovCount').textContent = `${chip} · ${shown.length}개 채널`;
   if (!shown.length) {
@@ -791,12 +803,54 @@ function renderYt(){
       <span class="v-body"><span class="v-title">${esc(v.title)}</span><span class="v-meta" style="display:block">${esc(v.channel)} · ${fmtViews(v.views)} · ${ago(v.at)}</span></span>
     </div>`).join('') : '<div class="empty">검색 결과가 없습니다.</div>');
 }
+// ───────── SOOP 인기 생방송 (앱 전용: 앱이 SOOP API를 직접 부름) ─────────
+const SOOP = '▶ SOOP 인기';
+let soopItems = [], soopState = '', soopErr = '', soopAt = 0;
+async function soopApi(url, post){
+  const u = 'https://relay.app/?url=' + encodeURIComponent(url) + (post ? '&post=' + encodeURIComponent(post) : '');
+  const r = await fetch(u, { cache: 'no-store' });
+  if (!r.ok) throw new Error('SOOP 응답 오류 ' + r.status);
+  return r.text();
+}
+async function loadSoop(force){
+  if (!force && soopState === 'ok' && Date.now() - soopAt < 3 * 60e3) return;
+  soopState = 'loading';
+  try {
+    const j = JSON.parse(await soopApi('https://live.sooplive.co.kr/api/main_broad_list_api.php?selectType=action&orderType=view_cnt&pageNo=1&lang=ko_KR'));
+    soopItems = (j.broad || [])
+      .filter(b => String(b.broad_grade) === '0' && b.is_password !== 'Y' && !Number(b.subscription_only))   // 19세·비번·구독전용 제외
+      .map(b => ({ id: String(b.broad_no), bid: b.user_id, title: b.broad_title, channel: b.user_nick,
+        views: +b.total_view_cnt || 0, cat: b.category_name || '', res: b.broad_resolution || '',
+        thumb: (b.broad_thumb || '').replace(/^\/\//, 'https://') }));
+    soopState = 'ok'; soopAt = Date.now();
+  } catch (e) { soopState = 'err'; soopErr = e.message; }
+}
+function renderSoop(){
+  shown = [];
+  $('ovCount').textContent = `SOOP 인기 · ${soopState === 'ok' ? soopItems.length + '개 방송' : '불러오는 중'}`;
+  const head = `<div class="ytcats"><button class="ytcat on" data-soopre="1">↻ 새로고침</button></div>`;
+  if (soopState !== 'ok') {
+    $('list').innerHTML = head + `<div class="empty">${soopState === 'err' ? '인기 방송을 불러오지 못했습니다: ' + esc(soopErr) : '인기 방송을 불러오는 중…'}</div>`;
+    if (!soopState) loadSoop(false).then(() => chip === SOOP && renderSoop());
+    return;
+  }
+  let items = soopItems;
+  if (query) items = items.filter(v => (v.title + ' ' + v.channel + ' ' + v.cat).toLowerCase().includes(query));
+  $('list').innerHTML = head + (items.length ? items.map(v => `
+    <div class="vrow${cur && cur.id === 'soop:' + v.id ? ' on' : ''}" data-soop="${esc(v.id)}" role="button" tabindex="0">
+      <span class="v-th"><img src="${esc(v.thumb)}" alt="" loading="lazy"><i class="v-rank">${soopItems.indexOf(v) + 1}</i><b class="live">LIVE</b></span>
+      <span class="v-body"><span class="v-title">${esc(v.title)}</span><span class="v-meta" style="display:block">${esc(v.channel)} · ${fmtViews(v.views).replace('회', '명')}${v.cat ? ' · ' + esc(v.cat) : ''}</span></span>
+    </div>`).join('') : '<div class="empty">검색 결과가 없습니다.</div>');
+}
+function soopChannel(v){
+  return { id: 'soop:' + v.id, ids: ['soop:' + v.id], name: v.title, logo: v.thumb, group: `${v.channel} · ${fmtViews(v.views).replace('회', '명')}`, tab: SOOP, type: 'soop', url: v.bid + '|' + v.id, sources: [{ type: 'soop', url: v.bid + '|' + v.id }] };
+}
 function ytChannel(v){
   return { id: 'yt:' + v.id, ids: ['yt:' + v.id], name: v.title, logo: v.thumb, group: `${v.channel} · ${fmtViews(v.views)}`, tab: YT, type: 'ytv', url: v.id, sources: [{ type: 'ytv', url: v.id }] };
 }
 function markCurrent(){
   document.querySelectorAll('.row').forEach(r => r.classList.toggle('on', !!cur && r.dataset.id === cur.id));
-  document.querySelectorAll('.vrow').forEach(r => r.classList.toggle('on', !!cur && 'yt:' + r.dataset.yt === cur.id));
+  document.querySelectorAll('.vrow').forEach(r => r.classList.toggle('on', !!cur && (r.dataset.yt ? 'yt:' + r.dataset.yt : 'soop:' + r.dataset.soop) === cur.id));
 }
 function toggleFav(id){
   favs = favs.includes(id) ? favs.filter(x => x !== id) : [...favs, id];
@@ -812,12 +866,16 @@ function updateNow(){
   $('nName').textContent = c ? c.name : '명왕사신TV';
   $('nDot').className = 'dot' + (c ? ' live' : '');
   const [p, n] = c ? nowNext(c) : [null, null];
-  $('nNow').textContent = !c ? '목록에서 채널을 고르세요' : c.type === 'ytv' ? c.group : p ? `${hm(p[0])}-${hm(p[1])}  ${p[2]}` : `실시간 · ${c.group}`;
+  $('nNow').textContent = !c ? '목록에서 채널을 고르세요' : (c.type === 'ytv' || c.type === 'soop') ? c.group : p ? `${hm(p[0])}-${hm(p[1])}  ${p[2]}` : `실시간 · ${c.group}`;
   if (n) $('nNext').textContent = `${hm(n[0])}-${hm(n[1])}  ${n[2]}`;
   else if (c && c.type === 'ytv') {
     const i = ytItems.findIndex(v => 'yt:' + v.id === c.id);
     const nx = i >= 0 ? ytItems[(i + 1) % ytItems.length] : null;
     $('nNext').textContent = nx ? `다음 영상  ${nx.title}` : '';
+  } else if (c && c.type === 'soop') {
+    const i = soopItems.findIndex(v => 'soop:' + v.id === c.id);
+    const nx = i >= 0 ? soopItems[(i + 1) % soopItems.length] : null;
+    $('nNext').textContent = nx ? `다음 방송  ${nx.channel} · ${nx.title}` : '';
   } else {
     const i = c ? shown.findIndex(x => x.id === c.id) : -1;
     const nx = i >= 0 && shown.length > 1 ? shown[(i + 1) % shown.length] : null;
@@ -886,7 +944,7 @@ function showErr(title, msg){
   $('skip').onclick = () => step(1);
 }
 function setQ(h){
-  $('ovName').textContent = cur ? (cur.type === 'ytv' ? 'YouTube · ' + cur.name : [cur.name, 'LIVE', h ? h + 'p' : ''].filter(Boolean).join(' · ')) : '채널을 선택하세요';
+  $('ovName').textContent = cur ? (cur.type === 'ytv' ? 'YouTube · ' + cur.name : cur.type === 'soop' ? 'SOOP · ' + cur.name + (h ? ' · ' + h + 'p' : '') : [cur.name, 'LIVE', h ? h + 'p' : ''].filter(Boolean).join(' · ')) : '채널을 선택하세요';
 }
 function stop(){
   stopCanvas();
@@ -1025,6 +1083,12 @@ function syncPause(){
   $('icPause').innerHTML = paused ? '<path d="M7 4l13 8-13 8z"/>' : '<rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/>';
 }
 function step(n){
+  if (cur && cur.type === 'soop' && soopItems.length) {
+    const i = soopItems.findIndex(v => 'soop:' + v.id === cur.id);
+    const v = soopItems[((i < 0 ? 0 : i + n) % soopItems.length + soopItems.length) % soopItems.length];
+    if (v) play(soopChannel(v));
+    return;
+  }
   if (cur && cur.type === 'ytv' && ytItems.length) {
     const i = ytItems.findIndex(v => 'yt:' + v.id === cur.id);
     const v = ytItems[((i < 0 ? 0 : i + n) % ytItems.length + ytItems.length) % ytItems.length];
@@ -1090,6 +1154,9 @@ $('gchips').onclick = chipClick;
 $('list').onclick = e => {
   const yc = e.target.closest('[data-ytcat]');
   if (yc) { ytCat = yc.dataset.ytcat; store.set('mw_ytcat', ytCat); ytState = ''; renderYt(); return; }
+  if (e.target.closest('[data-soopre]')) { soopState = ''; renderSoop(); loadSoop(true).then(() => chip === SOOP && renderSoop()); return; }
+  const sv = e.target.closest('[data-soop]');
+  if (sv) { const v = soopItems.find(x => x.id === sv.dataset.soop); if (v) { play(soopChannel(v)); if (window.innerWidth < 1000) window.scrollTo({ top: 0, behavior: 'smooth' }); } return; }
   const yv = e.target.closest('[data-yt]');
   if (yv) { const v = ytItems.find(x => x.id === yv.dataset.yt); if (v) { play(ytChannel(v)); if (window.innerWidth < 1000) window.scrollTo({ top: 0, behavior: 'smooth' }); } return; }
   const f = e.target.closest('[data-fav]'); if (f) { e.stopPropagation(); return toggleFav(f.dataset.fav); }
@@ -1207,6 +1274,7 @@ if (APP) {
       if (/(^|\.)imbc\.com$/.test(h)) return 'https://onair.imbc.com/';
       if (/(^|\.)kbs\.co\.kr$/.test(h)) return 'https://onair.kbs.co.kr/';
       if (/(^|\.)jtbc\.co\.kr$/.test(h)) return 'https://onair.jtbc.co.kr/';
+      if (/(^|\.)sooplive\.(com|co\.kr)$/.test(h)) return 'https://play.sooplive.com/';
     } catch {}
     return '';
   }
@@ -1287,7 +1355,7 @@ if (APP) {
   window.__appChannelName = function () { return cur ? cur.name : ''; };
   const playWeb = play;
   play = function (c) {
-    if (c && c.id && !/^yt:/.test(c.id) && AB.saveLast) { try { AB.saveLast(c.id); } catch {} }
+    if (c && c.id && !/^(yt|soop):/.test(c.id) && AB.saveLast) { try { AB.saveLast(c.id); } catch {} }
     return playWeb(c);
   };
   window.__appLastId = function () { try { return (AB.getLast && AB.getLast()) || store.get('mw_last', null); } catch { return store.get('mw_last', null); } };
