@@ -598,7 +598,7 @@ let favs = store.get('mw_favs', []);
 
 // ───────── 편성표 데이터 ─────────
 let EPG = null, epgIdx = {};
-const REGION = { tjmbc:'mbc', kjmbc:'mbc', chmbc:'mbc', ysmbc:'mbc', mpmbc:'mbc', jjmbc:'mbc', knn:'sbs', kbc:'sbs', ubc:'sbs', tjb:'sbs', cjb:'sbs' };
+const REGION = { tjmbc:'mbc', kjmbc:'mbc', chmbc:'mbc', ysmbc:'mbc', mpmbc:'mbc', jjmbc:'mbc', knn:'sbs', kbc:'sbs', ubc:'sbs', tjb:'sbs', cjb:'sbs', cbmbc:'mbc', gwydmbc:'mbc', admbc:'mbc', dgmbc:'mbc', g1:'sbs', tbc:'sbs', jtv:'sbs', jibs:'sbs' };
 const ALIAS = { sbslife:'sbsfl', sbsfil:'sbsfl', sbs퍼니:'sbsfune', kbs조이:'kbsjoy', kbs키즈:'kbskids', kbs뉴스:'kbs뉴스24', 국민방송:'ktv', ktv국민방송:'ktv', 국회방송natv:'국회방송', ebsplus1:'ebs플러스1', 'ebs+1':'ebs플러스1', ebsplus2:'ebs플러스2', 'ebs+2':'ebs플러스2', mbcon:'mbcon', 히스토리:'history', lifetime:'라이프타임', sbs골프:'sbsgolf', sbs스포츠:'sbssports', anibox:'애니박스', 애니박스:'애니박스' };
 function norm(s){
   let n = String(s).toLowerCase().replace(/\(.*?\)/g, '').replace(/\+/g, '플러스').replace(/[\s\-_·.!:'’]/g, '')
@@ -647,7 +647,7 @@ async function loadEpg(force){
 }
 
 // ───────── 채널 정리: 종류별 분류 + 같은 채널 합치기 ─────────
-const TABS = ['지상파', '지역방송', '종편', '뉴스', '드라마·예능', '음악', '스포츠', '교양·경제', '어린이·교육', '영화', '삼성TV'];
+const TABS = ['지상파', '지역방송', '종편', '뉴스', '드라마·예능', '음악', '스포츠', '교양·경제', '어린이·교육', '영화', '종교', '홈쇼핑', '삼성TV'];
 const CAT = {
   지상파: ['kbs1', 'kbs2', 'mbc', 'sbs', 'ebs1', 'ebs2'],
   종편: ['jtbc', '채널a', 'tv조선', 'mbn', 'tvn'],
@@ -674,24 +674,79 @@ function srcRank(x){
 }
 // 채널 로고 (iptv-org 데이터베이스 기준)
 const LOGOS = {"kbs1":"https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/KBS_1_logo.svg/960px-KBS_1_logo.svg.png","kbs2":"https://upload.wikimedia.org/wikipedia/commons/thumb/2/26/KBS_2_logo.svg/960px-KBS_2_logo.svg.png","mbc":"https://static.wikia.nocookie.net/logopedia/images/b/bd/Munhwa_Broadcasting_Corporation_2023.svg/revision/latest/scale-to-width-down/512","sbs":"https://i.imgur.com/4LHX71N.png","ebs1":"https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/EBS_1TV_Logo.svg/960px-EBS_1TV_Logo.svg.png","ebs2":"https://upload.wikimedia.org/wikipedia/commons/thumb/d/db/EBS_2TV_Logo.svg/960px-EBS_2TV_Logo.svg.png","jtbc":"https://i.imgur.com/fCruRmS.png","채널a":"https://i.imgur.com/W9laHPD.png","tv조선":"https://i.imgur.com/62EwaCG.png","mbn":"https://i.imgur.com/wm3JupT.png","tvn":"https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/Logo_tvN.svg/960px-Logo_tvN.svg.png","ytn":"https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/YTN_logo_2014.svg/960px-YTN_logo_2014.svg.png","연합뉴스":"https://i.imgur.com/3aLkU2I.png","kbs뉴스24":"https://i.imgur.com/ObWsxCy.png","mbc뉴스":"https://upload.wikimedia.org/wikipedia/commons/thumb/7/73/MBC_News_2018.svg/960px-MBC_News_2018.svg.png","sbs뉴스":"https://i.imgur.com/VY6uEE9.png","ktv":"https://i.ibb.co/WkrLDJW/Screenshot-20230714-135036-removebg-preview.png","국회방송":"https://i.imgur.com/UKdB8vD.png","jtbc2":"https://i.imgur.com/kljWkXS.png","jtbc4":"https://i.imgur.com/dgIXpHS.png","채널a플러스":"https://i.imgur.com/2t4Y5FP.png","tv조선2":"https://i.imgur.com/Ev5JoBJ.png","mbn플러스":"https://i.imgur.com/8isw1U0.png","tvnshow":"https://i.imgur.com/8OobmvS.png","tvn드라마":"https://i.imgur.com/f91ieU8.png","tvnstory":"https://i.imgur.com/zy0bmH6.png","kbs드라마":"https://upload.wikimedia.org/wikipedia/commons/thumb/f/f2/KBS_DRAMA.svg/960px-KBS_DRAMA.svg.png","kbsjoy":"https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/KBS_JOY.svg/960px-KBS_JOY.svg.png","kbslife":"https://upload.wikimedia.org/wikipedia/commons/thumb/6/64/KBS_Life.svg/960px-KBS_Life.svg.png","kbsstory":"https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/KBS_Story.svg/960px-KBS_Story.svg.png","sbs플러스":"https://i.imgur.com/8pINOIM.png","sbsfune":"https://i.imgur.com/sxM1XcA.png","sbsfl":"https://i.imgur.com/JKNSd8s.png","mbc드라마":"https://i.imgur.com/Q20rqnX.png","mbc에브리원":"https://i.imgur.com/cnawqOu.png","mbcon":"https://i.imgur.com/AQzgnKD.png","중화":"https://upload.wikimedia.org/wikipedia/zh/8/84/%EC%A4%91%ED%99%94TV_logo.png","mnet":"https://i.imgur.com/DGH10Z2.png","mbcm":"https://static.wikia.nocookie.net/logopedia/images/4/41/MBC_M_logo.svg/revision/latest/scale-to-width-down/512","sbsgolf":"https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/SBS_Golf_logo_2018.svg/960px-SBS_Golf_logo_2018.svg.png","sbsgolf2":"https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/SBS_Golf_logo_2018.svg/960px-SBS_Golf_logo_2018.svg.png","sbssports":"https://i.imgur.com/L2SdLkb.png","kbsworld":"https://i.imgur.com/7DqgELX.png","ytn2":"https://i.imgur.com/g6Nhwmb.png","ytn사이언스":"https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/YTN_%EC%82%AC%EC%9D%B4%EC%96%B8%EC%8A%A4_%EB%A1%9C%EA%B3%A0_%EB%89%B4.png/960px-YTN_%EC%82%AC%EC%9D%B4%EC%96%B8%EC%8A%A4_%EB%A1%9C%EA%B3%A0_%EB%89%B4.png","history":"https://upload.wikimedia.org/wikipedia/commons/thumb/0/01/History_%282021%29.svg/500px-History_%282021%29.svg.png","sbsbiz":"https://i.imgur.com/gwA98UT.png","아리랑":"https://i.imgur.com/Asu5pE9.png","tbs":"https://i.imgur.com/iOnWS6V.png","abn":"https://www.abn.co.kr/resources/images/logo.png","농협":"https://i.imgur.com/DfECkgB.png","복지":"https://i.imgur.com/IkFev3L.png","ebskids":"https://i.imgur.com/62oo8Bx.png","ebs플러스1":"https://i.imgur.com/aCeuhon.png","ebs플러스2":"https://i.imgur.com/pllIMGi.png","ebsenglish":"https://i.imgur.com/5wLJzb0.png","kbskids":"https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/KBS_kids.svg/960px-KBS_kids.svg.png","애니맥스":"https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Animax.png/960px-Animax.png","투니버스":"https://i.imgur.com/Fesm8M3.png","애니박스":"https://i.imgur.com/5SZfGmy.png","방송대학":"https://i.imgur.com/7s6JtcU.png","mbcnet":"https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/MBCNET_%EB%A1%9C%EA%B3%A0.svg/960px-MBCNET_%EB%A1%9C%EA%B3%A0.svg.png","id:tjmbc":"https://i.imgur.com/HCbvAiM.png","id:kjmbc":"https://i.imgur.com/wmGJgYh.png","id:chmbc":"https://i.imgur.com/lthyx2P.png","id:ysmbc":"https://i.imgur.com/3VSuYsn.png","id:mpmbc":"https://i.imgur.com/5oraHc0.png","id:jjmbc":"https://i.imgur.com/JM4rxGU.png","id:knn":"https://i.imgur.com/gaBq1Lz.png","id:kbc":"https://i.imgur.com/Srsw4Mi.png","id:ubc":"https://i.imgur.com/BBCoqIf.png","id:tjb":"https://i.imgur.com/grr8BlV.png","id:cjb":"https://i.imgur.com/zVunmpQ.png"};
+
+// ───────── 추가 채널 (iptv-org 한국어·대한민국 재생목록에서 2026-10-25 국내 IP로 확인한 것) ─────────
+// [id, 이름, 종류, 주소, 'free', 로고, 해상도(세로), 탭]  · http 주소는 앱에서만 씀 · 해상도 높은 출처를 먼저 재생
+const EXTRA_CH = [
+  // 지역방송 (id가 기존 지역 채널과 같으면 같은 채널의 다른 출처로 합쳐짐)
+  ['mpmbc','목포MBC','hls','http://vod.mpmbc.co.kr:1935/live/encoder-tv/playlist.m3u8','free','',720],
+  ['cbmbc','MBC충북','hls','http://211.33.246.4:32954/cj_live/myStream.sdp/playlist.m3u8','free','IMG/uR0gScb.png',720],
+  ['gwydmbc','MBC강원영동','hls','http://123.254.93.7:1935/tvlive/livestream2/playlist.m3u8','free','IMG/FGsKCH3.png',1080],
+  ['admbc','안동MBC','hls','http://andong.webcasting.co.kr/live/mbc/playlist.m3u8','free','IMG/nqRWpUu.png',360],
+  ['dgmbc','대구MBC','hls','https://5ee1ec6f32118.streamlock.net/live/livetv/playlist.m3u8','free','IMG/LlYQR8m.png',480],
+  ['g1','G1 강원민방','hls','http://61.82.49.4:1935/live/_definst_/tv.stream/playlist.m3u8','free','IMG/ABdmZMc.png',360],
+  ['tbc','TBC 대구','hls','http://203.251.91.122:1935/on-air-Backup/tv/playlist.m3u8','free','IMG/jknoVmp.png',540],
+  ['jtv','JTV 전주','hls','http://61.85.197.53:1935/jtv_live/myStream/playlist.m3u8','free','IMG/byss0Ld.png',406],
+  ['cjb','CJB 청주','hls','http://1.222.207.80:1935/live/cjbtv/playlist.m3u8','free','',540],
+  ['jibs','JIBS 제주','hls','http://123.140.197.22/stream/1/play.m3u8','free','IMG/iAz0Psw.png',720],
+  // 종편·뉴스·교양 (기존 채널과 이름이 같으면 출처가 늘어남)
+  ['chA_cdn','채널A','hls','http://channelalive.ktcdn.co.kr/chalivepc/_definst_/atv2/playlist.m3u8','free','',720],
+  ['tvc_cdn','TV CHOSUN','hls','http://onair.cdn.tvchosun.com/origin1/_definst_/tvchosun_s1/playlist.m3u8','free','',720],
+  ['tvc2_cdn','TV CHOSUN 2','hls','http://onair2.cdn.tvchosun.com/origin2/_definst_/tvchosun_s3/playlist.m3u8','free','',720],
+  ['arirang_hd','아리랑TV','hls','http://amdlive-ch01.ctnd.com.edgesuite.net/arirang_1ch/smil:arirang_1ch.smil/playlist.m3u8','free','',1080],
+  ['kbsworld_alt','KBS World','hls','https://stream8.cinerama.uz/1448/playlist.m3u8','free','',720],
+  ['natv_alt','국회방송(NATV)','hls','https://github.com/BellezaEmporium/IPTV_Exception/raw/master/channels/kr/natv.m3u8','free','',720],
+  ['ytn_alt','YTN','hls','http://202.60.106.14:8080/214/playlist.m3u8','free','',720],
+  ['mtn','MTN 머니투데이','hls','http://183.110.27.87/mtnlive/720/playlist.m3u8','free','IMG/MS0lqoG.png',720,'교양·경제'],
+  ['nbs','NBS 한국농업방송','hls','https://media.joycorp.co.kr:4443/live/ngrp:live_all/playlist.m3u8','free','IMG/pOSroOE.png',720,'교양·경제'],
+  ['gugak','국악방송','hls','https://mgugaklive.nowcdn.co.kr/gugakvideo/gugakvideo.stream/playlist.m3u8','free','IMG/Ey7Htm8.png',1080,'음악'],
+  ['gugbang','국방TV','hls','http://mediaworks.dema.mil.kr:1935/live_edge/cudo.sdp/playlist.m3u8','free','IMG/f1tz5fg.png',1080,'교양·경제'],
+  ['kctv','KCTV 광주','hls','http://119.77.96.184:1935/chn05/chn05/playlist.m3u8','free','IMG/IHkZpaI.png',720,'지역방송'],
+  // 종교
+  ['btn','BTN 불교TV','hls','https://btn.nowcdn.co.kr/btn/btnlive2m/playlist.m3u8','free','IMG/sOoS7RQ.png',1080,'종교'],
+  ['bbs','BBS 불교방송','hls','http://bbstv.clouducs.com:1935/bbstv-live/livestream/playlist.m3u8','free','IMG/01UmXRe.png',1080,'종교'],
+  ['goodtv','GOODTV','hls','http://mobliestream.c3tv.com:1935/live/goodtv.sdp/playlist.m3u8','free','https://i.ibb.co/1v913gn/logo-goodtv.png',1080,'종교'],
+  ['fgtv','FGTV 순복음','hls','https://fgtvlive.fgtv.com/smil:fgtv.smil/playlist.m3u8','free','https://i.ibb.co/crxz0fd/yfgc-hearder-logo.png',720,'종교'],
+  ['gcn','GCN','hls','http://liveko24-manminglobal3.ktcdn.co.kr/liveko24/gcnko_1300k.stream/playlist.m3u8','free','IMG/yzwtMOC.png',720,'종교'],
+  ['rutc','RUTC TV','hls','http://d26sxnc75smwvh.cloudfront.net/livehttporigin/rutclive_720p2.stream/playlist.m3u8','free','https://i.ibb.co/yPDhKBp/rutc-logo.jpg',720,'종교'],
+  // 홈쇼핑
+  ['kshop','K쇼핑','hls','https://fhs8036.bd-61.ktcdn.co.kr/klive/smil:klive.smil/playlist.m3u8','free','IMG/Tmb3xK8.png',1080,'홈쇼핑'],
+  ['gsshop','GS SHOP','hls','https://gstv-gsshop.gsshop.com/gsshop_hd/gsshop_hd.stream/playlist.m3u8','free','IMG/F7QDbEy.png',720,'홈쇼핑'],
+  ['gsmyshop','GS MY SHOP','hls','https://gstv-myshop.gsshop.com/myshop_hd/myshop_hd.stream/playlist.m3u8','free','IMG/ETPQwui.png',720,'홈쇼핑'],
+  ['hmall','현대홈쇼핑','hls','https://livejj.hyundaihmall.com:8443/live/ngrp:hmall.stream_pc/playlist.m3u8','free','IMG/NJpECmq.png',720,'홈쇼핑'],
+  ['hmallplus','현대홈쇼핑+샵','hls','https://dtvstreaming.hyundaihmall.com/newcjp3/_definst_/newcjpstream.smil/playlist.m3u8','free','IMG/DoNOuZE.png',720,'홈쇼핑'],
+  ['lotte','롯데홈쇼핑','hls','https://pchlslivesw.lotteimall.com/live/livestream/lotteimalllive_mp4.m3u8','free','IMG/dJeNehc.png',720,'홈쇼핑'],
+  ['lotteone','롯데OneTV','hls','https://onetvhlslive.lotteimall.com/lotteonetvlive/lotteonetvlive.mp4.m3u8','free','IMG/bXe7tYE.png',720,'홈쇼핑'],
+  ['ssg','신세계쇼핑','hls','https://liveout.catenoid.net/live-02-shinsegaetvshopping/shinsegaetvshopping_720p/playlist.m3u8','free','IMG/Hq3yjqA.png',720,'홈쇼핑'],
+  ['shopnt','쇼핑엔티','hls','https://live.shoppingntmall.com/live/10011.m3u8','free','IMG/BgbJp5X.png',720,'홈쇼핑'],
+  ['wshop','W쇼핑','hls','https://liveout.catenoid.net/live-05-wshopping/wshopping_1500k/playlist.m3u8','free','IMG/hfXjVJd.png',720,'홈쇼핑'],
+  ['homeandshop','홈앤쇼핑','hls','https://s28.qtcdn.co.kr/media/liveM3U8/idx/518045142/enc/1860408350/playlist.m3u8','free','IMG/IcexRXG.png',720,'홈쇼핑'],
+  ['publichs','공영쇼핑','hls','https://etv.publichs.com/live5.stream/playlist.m3u8','free','IMG/YL3rpd7.png',720,'홈쇼핑'],
+  ['cjon','CJ온스타일','hls','https://live-ch1.cjonstyle.net/cjmalllive/stream2/playlist.m3u8','free','IMG/JiSfEBv.png',540,'홈쇼핑'],
+  ['cjonplus','CJ온스타일+','hls','https://live-ch2.cjonstyle.net/cjosplus/live2/playlist.m3u8','free','IMG/OYmOL20.png',400,'홈쇼핑'],
+].map(x => { if (x[5] && x[5].startsWith('IMG/')) x[5] = 'https://i.imgur.com/' + x[5].slice(4); return x; })
+ .filter(x => window.AppBridge || /^https:/.test(x[3]));   // 웹은 https만
+
 function buildChannels(){
   const raw = [];
   DATA.forEach(t => t.groups.forEach(g => g.items.forEach(it => raw.push({
     id: it[0], name: it[1], type: it[2], url: it[3], logo: it[5] && /^https?:/.test(it[5]) ? it[5] : '', group: g.g
   }))));
+  EXTRA_CH.forEach(it => raw.push({ id: it[0], name: it[1], type: it[2], url: it[3], logo: it[5] || '', group: it[7] || '', h: it[6] || 0, tab: it[7] || '' }));
   const byKey = new Map(), out = [];
   raw.forEach(r => {
     const key = r.type === 'stvp' ? 'stvp:' + r.url : (REGION[r.id] ? 'id:' + r.id : norm(r.name));
     let c = byKey.get(key);
     if (!c) {
-      c = { id: r.id, ids: [r.id], name: r.name, logo: r.logo, sources: [], tab: catOf(r) };
+      c = { id: r.id, ids: [r.id], name: r.name, logo: r.logo, sources: [], tab: r.tab || catOf(r) };
       c.group = r.type === 'stvp' ? r.group : REGION[r.id] ? (REGION[r.id] === 'mbc' ? '지역 MBC' : '지역 민방') : c.tab;
       byKey.set(key, c); out.push(c);
     } else { c.ids.push(r.id); if (!c.logo && r.logo) c.logo = r.logo; }
-    c.sources.push({ type: r.type, url: r.url });
+    if (!c.sources.some(s => s.url === r.url)) c.sources.push({ type: r.type, url: r.url, h: r.h || 0 });
   });
   out.forEach(c => {
-    c.sources.sort((a, b) => srcRank(a) - srcRank(b));
+    // 방송사 공식 API → 그 밖의 출처는 해상도 높은 순 (모르면 600p로 봄)
+    c.sources.sort((a, b) => srcRank(a) - srcRank(b) || ((b.h || 600) - (a.h || 600)));
     const best = raw.find(r => c.ids.includes(r.id) && r.type === c.sources[0].type && r.url === c.sources[0].url);
     if (best && srcRank(c.sources[0]) <= 1) c.name = best.name;
     c.type = c.sources[0].type; c.url = c.sources[0].url;
@@ -1285,6 +1340,8 @@ if (APP) {
       if (/(^|\.)kbs\.co\.kr$/.test(h)) return 'https://onair.kbs.co.kr/';
       if (/(^|\.)jtbc\.co\.kr$/.test(h)) return 'https://onair.jtbc.co.kr/';
       if (/(^|\.)sooplive\.(com|co\.kr)$/.test(h)) return 'https://play.sooplive.com/';
+      if (/(^|\.)tvchosun\.com$/.test(h)) return 'http://broadcast.tvchosun.com/onair/on.cstv';
+      if (/(^|\.)cinerama\.uz$/.test(h)) return 'https://cinerama.uz/';
     } catch {}
     return '';
   }
