@@ -412,7 +412,7 @@ const M3U_BUILTIN = [
 ];
 
 // ───────── kr-iptv 재생목록 (내 GitHub: junghwan1570/kr-iptv, GitHub Actions가 4시간마다 갱신) ─────────
-// 한국 채널(group-title이 '한국-'로 시작)만 쓰고, HTTPS 페이지에서 막히는 http:// 주소는 뺍니다.
+// 한국 채널(group-title이 '한국-'로 시작)만 쓰고, HTTPS 페이지에서 막히는 http:// 주소는 뺍니다(앱에서는 포함).
 // SBS·MBC처럼 방송사 API로 매번 토큰을 받는 채널은 내장 방식을 그대로 씁니다.
 const M3U_SRCS = [
   'https://raw.githubusercontent.com/junghwan1570/kr-iptv/main/kr.m3u',
@@ -433,7 +433,8 @@ function parseKrM3u(text){
     const nm = inf.match(/"\s*,([^"]*)$/) || inf.match(/,([^,]*)$/);
     const name = (nm ? nm[1] : attr('tvg-name')).trim();
     const group = attr('group-title');
-    if (name && group.startsWith('한국-') && /^https:\/\//i.test(l)) out.push({ name, group, logo: attr('tvg-logo'), type: 'hls', url: l });
+    // 앱은 http 주소도 재생할 수 있어 함께 받음 (웹은 https만)
+    if (name && group.startsWith('한국-') && (window.AppBridge ? /^https?:\/\//i : /^https:\/\//i).test(l)) out.push({ name, group, logo: attr('tvg-logo'), type: 'hls', url: l });
     inf = null;
   }
   return out;
