@@ -82,7 +82,7 @@ jobs:
           files: MyeongwangTV-Public.apk
           make_latest: true
 
-      # 내 전용 APK를 공개키로 암호화해서 빌드 결과물로 보관 (개인키가 있는 사람만 풀 수 있음, 3일 뒤 삭제)
+      # 내 전용 APK를 공개키로 암호화해서 릴리스에 올림 (암호화돼 있어 받아도 설치 불가, 개인키로만 풀림)
       - name: Encrypt my APK
         run: |
           cat > pub.pem <<'KEY'
@@ -103,13 +103,13 @@ jobs:
           openssl pkeyutl -encrypt -pubin -inkey pub.pem -in k.txt -out MyeongwangTV.key.enc
           openssl enc -aes-256-cbc -pbkdf2 -salt -in MyeongwangTV.apk -out MyeongwangTV.apk.enc -pass file:k.txt
           rm k.txt
-      - uses: actions/upload-artifact@v4
+      - name: Attach encrypted APK to the release
+        uses: softprops/action-gh-release@v2
         with:
-          name: MyeongwangTV-mine-encrypted
-          path: |
+          tag_name: android-latest
+          files: |
             MyeongwangTV.apk.enc
             MyeongwangTV.key.enc
-          retention-days: 3
 
       # 내 전용 APK → 비공개 저장소(tvwaad)의 릴리스로. 비밀값 PRIVATE_RELEASE_TOKEN이 있을 때만.
       - name: Publish my APK to the private repo
