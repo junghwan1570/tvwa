@@ -699,11 +699,14 @@ const QQ_SRCS = [QQ_BASE + '/koreatv.json', 'https://cdn.jsdelivr.net/gh/kenpark
 const QQ_PL = n => QQ_BASE + '/playlist/' + encodeURI(String(n).trim()) + '-playlist.m3u8';
 const QQ_TTL = 60 * 60 * 1000;
 let QQ_STATE = (() => { try { return JSON.parse(localStorage.getItem('mw_qq') || 'null'); } catch { return null; } })();
+// QQ 목록의 group이 '한국-'으로 시작하는 것만 한국 채널
+const isKrGroup = g => /^한국-/.test(String(g || '').trim());
 function parseQq(arr){
   if (!Array.isArray(arr)) throw new Error('QQ 목록 형식이 아닙니다');
   const out = [];
   arr.forEach(c => {
     if (!c || !c.name || !String(c.name).trim()) return;
+    if (!isKrGroup(c.group)) return;   // 한국 채널만 (중국 央视·卫视·港台, ENGLISH 등 외국 채널은 뺌)
     const name = String(c.name).trim();
     const uris = [QQ_PL(name)];
     (Array.isArray(c.uris) ? c.uris : []).forEach(u => {
@@ -744,7 +747,8 @@ function setupQqData(){
   };
   // QQ 목록을 아직 못 받았어도: QQ가 GitHub 재생목록으로 트는 채널은 바로 추가
   M3U_BUILTIN.forEach(b => { if (b.type === 'hls' && /760515\.xyz\/playlist\//.test(b.url)) add('QQ', b.name, QQ_PL(b.name), ''); });
-  const items = QQ_STATE && Array.isArray(QQ_STATE.items) ? QQ_STATE.items : [];
+  // 예전에 저장해 둔 목록에 외국 채널이 섞여 있어도 걸러냄
+  const items = QQ_STATE && Array.isArray(QQ_STATE.items) ? QQ_STATE.items.filter(c => isKrGroup(c.group)) : [];
   items.forEach(c => c.uris.forEach(u => add('QQ' + (c.group ? ' · ' + c.group : ''), c.name, u, /^https:/.test(c.logo) ? c.logo : '')));
   DATA.push({ tab: 'QQ', qq: true, groups: Object.entries(groups).map(([g, its]) => ({ g, items: its })) });
 }
