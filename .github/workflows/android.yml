@@ -82,6 +82,35 @@ jobs:
           files: MyeongwangTV-Public.apk
           make_latest: true
 
+      # 내 전용 APK를 공개키로 암호화해서 빌드 결과물로 보관 (개인키가 있는 사람만 풀 수 있음, 3일 뒤 삭제)
+      - name: Encrypt my APK
+        run: |
+          cat > pub.pem <<'KEY'
+            -----BEGIN PUBLIC KEY-----
+            MIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEAvOtwNrD+eihpTpcDLTtf
+            sxb0xIL2RkiEakd6h5Eqlbrq8HzDYdwGeybz0IrJGGrc3XBFPs1jOiAPsJGqwZ/n
+            DQx4UAuEYD6oFtIjT0eg27RE4XE8lV1YLaHnxdUiOYnYvupmS+LdIS2/IO0LN8dy
+            ykZHvKOn4kc+l3cmcFfONCptL6dcEy8M7xKVehC+slyPaOfs0XnwLlNc7U/cU0Wb
+            WzkRNaBZ0qql45wYNp4GRTXMmPxW4TqeFqGt33puA7OehWntIqcaNxjqLlvIHBD7
+            qCRuf6IPSYXYWTZ2mcPsy7BxTBIUFAqiOMZ34tO+XliA/AptnU0uVLUbb5VKCz8u
+            HP6kgwY8r+MAXWRRhNaLpvlAXa1FiAr+6f9/AZxICNWDQrx9W0K6PKMTFQ0YEjnX
+            bKEGAj4U2/QIcT5lQeJWtKBmVVVbnHNgCQ+EL3sSHL5qkp4xwki9my8/PHSH3rE7
+            w4hLBfs34CwSptS017hGs+R6SDReQa7qzGE0/J73gFvTAgMBAAE=
+            -----END PUBLIC KEY-----
+          KEY
+          sed -i 's/^ *//' pub.pem
+          openssl rand -hex 32 > k.txt
+          openssl pkeyutl -encrypt -pubin -inkey pub.pem -in k.txt -out MyeongwangTV.key.enc
+          openssl enc -aes-256-cbc -pbkdf2 -salt -in MyeongwangTV.apk -out MyeongwangTV.apk.enc -pass file:k.txt
+          rm k.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MyeongwangTV-mine-encrypted
+          path: |
+            MyeongwangTV.apk.enc
+            MyeongwangTV.key.enc
+          retention-days: 3
+
       # 내 전용 APK → 비공개 저장소(tvwaad)의 릴리스로. 비밀값 PRIVATE_RELEASE_TOKEN이 있을 때만.
       - name: Publish my APK to the private repo
         if: ${{ env.PRIV_TOKEN != '' }}
