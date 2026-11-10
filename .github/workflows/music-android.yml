@@ -1,0 +1,75 @@
+name: 사신뮤직 설치 파일
+
+on:
+  push:
+    branches: [main]
+    paths: ['music/**', '.github/workflows/music-android.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: music-apk
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: music
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      # 비밀값이 없을 때 쓰는 임시 키: 한 번 만들어 보관하고 계속 재사용 (같은 키라야 덮어 설치가 됨)
+      - uses: actions/cache@v4
+        with:
+          path: music/ci-temp.keystore
+          key: music-ci-temp-keystore-v1
+
+      - name: 서명 키 준비
+        env:
+          KS: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+        run: |
+          if [ -n "$KS" ]; then
+            echo "$KS" | base64 -d > release.keystore; echo "고정 키(비밀값)로 서명합니다"
+          elif [ ! -f ci-temp.keystore ]; then
+            keytool -genkeypair -keystore ci-temp.keystore -alias temp -keyalg RSA -keysize 2048 -validity 10000 \
+              -storepass android -keypass android -dname "CN=Sasin Music, C=KR"
+            echo "::warning::임시 키를 새로 만들었습니다 (이번 한 번은 기존 앱을 지우고 설치해야 함)"
+          fi
+
+      - name: 시험
+        run: ./gradlew testReleaseUnitTest --no-daemon
+
+      - name: 설치 파일 만들기
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+        run: |
+          ./gradlew assembleRelease --no-daemon --stacktrace
+          cp app/build/outputs/apk/release/app-release.apk ../SasinMusic.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SasinMusic
+          path: SasinMusic.apk
+          retention-days: 7
+
+      - name: 릴리스에 올리기
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: music-latest
+          name: 사신뮤직 (최신)
+          body: |
+            SasinMusic.apk: 사신뮤직 설치 파일
+            빌드 ${{ github.run_number }} · ${{ github.sha }}
+          files: SasinMusic.apk
+          make_latest: false
