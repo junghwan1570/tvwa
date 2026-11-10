@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">사신뮤직</string>
+    <string name="ch_play">재생 중</string>
+    <string name="ch_lyric">상단바 가사</string>
+</resources>

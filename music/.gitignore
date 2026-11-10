@@ -1,0 +1,5 @@
+.gradle/
+build/
+local.properties
+*.keystore
+사신뮤직.apk
